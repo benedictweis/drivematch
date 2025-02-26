@@ -1,21 +1,20 @@
-from flask import Flask, render_template, request, make_response
+from flask import Flask, request
+from flask_cors import CORS, cross_origin
 import msgspec
 
-from lib.scraping import MobileDeScraper
-from lib.analysis import CarsAnalyzer
-from lib.cache import InMemoryCachingCarsScraper, FileCachingCarsScraper
+from svc.scraping import MobileDeScraper
+from svc.analysis import CarsAnalyzer
+from svc.cache import InMemoryCachingCarsScraper, FileCachingCarsScraper
 
 carsScraper = InMemoryCachingCarsScraper(FileCachingCarsScraper("./cache/", MobileDeScraper()))
 carsAnalyzer = CarsAnalyzer()
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 def jsonResponse(content):
     return app.response_class(response=str(msgspec.json.encode(content).decode('utf-8')), mimetype='application/json')
-
-@app.get('/analyze')
-def send_index():
-    return render_template('index.html')
 
 @app.get("/api/v1/analyze")
 def hello_world():
