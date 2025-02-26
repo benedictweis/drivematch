@@ -1,45 +1,68 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import analyzeCar from "./api";
+import { nextTick, ref } from "vue";
+import { ScoredCar, GroupedCarsByManufacturerAndModel } from "./types";
+import fetchAPI from "./api";
+import CarForm from "./components/CarForm.vue";
+
 const loading = ref(false);
+const scoredCars = ref<ScoredCar[]>([]);
+const groupedCars = ref<GroupedCarsByManufacturerAndModel[]>();
+
+const url = ref("");
+const weightHP = ref(1);
+const weightPrice = ref(-1);
+const weightMileage = ref(-1);
+const weightAge = ref(-1);
 
 async function handleAnalyzeButton() {
+  console.log(scoredCars.value);
   loading.value = true;
-  await analyzeCar();
+  const apiData = await fetchAPI(url.value, weightHP.value, weightPrice.value, weightMileage.value, weightAge.value);
+  scoredCars.value = apiData.scoredCars;
+  groupedCars.value = apiData.groupedCars;
+  await nextTick();
   loading.value = false;
+  console.log(scoredCars.value);
 }
 </script>
 
 <template>
   <div class="container">
     <div class="column">
-      <form id="carForm">
-        <label for="url">Mobile.de URL:</label>
-        <input type="url" id="url" name="url" required /><br /><br />
-
-        <label for="horsepower">Horsepower Weight:</label>
-        <input type="number" id="horsepower" name="horsepower" min="-100" max="100" value="1" required /><br /><br />
-
-        <label for="price">Price Weight:</label>
-        <input type="number" id="price" name="price" min="-100" max="100" value="-1" required /><br /><br />
-
-        <label for="mileage">Mileage Weight:</label>
-        <input type="number" id="mileage" name="mileage" min="-100" max="100" value="-1" required /><br /><br />
-
-        <label for="age">Age Weight:</label>
-        <input type="number" id="age" name="age" min="-100" max="100" value="-1" required /><br /><br />
-
-        <button type="button" @click="handleAnalyzeButton()">Analyze</button>
-      </form>
+      <CarForm
+        v-model:url="url"
+        v-model:weightHP="weightHP"
+        v-model:weightPrice="weightPrice"
+        v-model:weightMileage="weightMileage"
+        v-model:weightAge="weightAge"
+        @analyze="handleAnalyzeButton"
+      />
     </div>
-    <div class="column scrollable">
-      <div id="scoredCarsContainer"></div>
+    <div class="column">
+      <div v-for="{ car } in scoredCars" :key="car.id" class="list-entry">
+        <img class="car-image" :src="car.imageURL" :alt="car.manufacturer + ' ' + car.model" />
+        <h3>
+          <a :href="car.detailsURL">{{ car.manufacturer }} {{ car.model }}</a>
+        </h3>
+        <p>{{ car.description }}</p>
+        <p>{{ car.price }}€</p>
+        <p>
+          EZ {{ new Date(car.firstRegistration).toLocaleDateString("en-GB", { month: "2-digit", year: "numeric" }) }} - {{ car.mileage }}km -
+          {{ car.horsePower }}hp - {{ car.fuelType }}
+        </p>
+      </div>
     </div>
-    <div class="column scrollable">
-      <div id="groupedCarsContainer"></div>
+    <div class="column">
+      <div v-for="group in groupedCars" :key="group.manufacturer + group.model" class="list-entry">
+        <h3>{{ group.manufacturer }} {{ group.model }}</h3>
+        <p>Count: {{ group.count }}</p>
+        <p>Average Price: {{ group.averagePrice }}€</p>
+        <p>Average Mileage: {{ group.averageMileage }}km</p>
+        <p>Average Horsepower: {{ group.averageHorsePower }}hp</p>
+      </div>
     </div>
   </div>
-  <div v-if="loading" id="loadingMessage">Analyzing...</div>
+  <div v-show="loading" id="loadingMessage">Analyzing...</div>
 </template>
 
 <script lang="ts">
@@ -66,55 +89,11 @@ body {
 .container {
   display: grid;
   grid-template-columns: 1fr 2fr 1fr;
-  width: 100%;
   max-width: 1200px;
 }
 
 .column {
   padding: 20px;
-}
-
-.scrollable {
-  overflow-y: auto;
-}
-
-form {
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-}
-
-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-input[type="url"],
-input[type="number"] {
-  width: calc(100%-20px);
-  padding: 10px;
-  margin-bottom: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 16px;
-  box-sizing: border-box;
-}
-
-button {
-  width: 100%;
-  padding: 10px;
-  background-color: #007aff;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #005bb5;
 }
 
 #loadingMessage {
@@ -139,9 +118,8 @@ button:hover {
 }
 
 .car-image {
-  width: auto;
-  height: 150px;
   float: left;
+  width: 150px;
   margin-right: 10px;
 }
 </style>
