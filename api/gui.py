@@ -1,8 +1,8 @@
 import sys
 from PySide6 import QtCore, QtWidgets
 
-from svc.scraping import CarsScraper, MobileDeScraper
-from svc.analysis import CarsAnalyzer
+from api.scraping import CarsScraper, MobileDeScraper
+from api.analysis import CarsAnalyzer
 
 class MobileDeWidget(QtWidgets.QWidget):
     def __init__(self, carsScraper: CarsScraper, carsAnalyzer: CarsAnalyzer):

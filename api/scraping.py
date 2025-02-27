@@ -6,7 +6,7 @@ import requests
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from abc import ABC, abstractmethod
 
-from svc.types import Car
+from api.types import Car
 
 def getSoupFromURL(url):
     response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36'})

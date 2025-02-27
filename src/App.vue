@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { nextTick, ref, onMounted } from "vue";
+import { nextTick, ref } from "vue";
 import { ScoredCar, GroupedCarsByManufacturerAndModel } from "./types";
 import fetchAPI from "./api";
 import SettingsForm from "./components/SettingsForm.vue";
 import ListEntry from "./components/ListEntry.vue";
 import LoadingMessage from "./components/LoadingMessage.vue";
 import Header from "./components/Header.vue";
-import styles from "@/assets/styles/base.css";
 
 const loading = ref(false);
 const scoredCars = ref<ScoredCar[]>([]);
@@ -99,7 +98,7 @@ body {
   height: 100%;
   display: flex;
   align-items: center;
-  justify-content: cente
+  justify-content: center;
 }
 </style>
 

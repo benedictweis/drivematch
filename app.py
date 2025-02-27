@@ -1,10 +1,10 @@
 from flask import Flask, request
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 import msgspec
 
-from svc.scraping import MobileDeScraper
-from svc.analysis import CarsAnalyzer
-from svc.cache import InMemoryCachingCarsScraper, FileCachingCarsScraper
+from api.scraping import MobileDeScraper
+from api.analysis import CarsAnalyzer
+from api.cache import InMemoryCachingCarsScraper, FileCachingCarsScraper
 
 carsScraper = InMemoryCachingCarsScraper(FileCachingCarsScraper("./cache/", MobileDeScraper()))
 carsAnalyzer = CarsAnalyzer()

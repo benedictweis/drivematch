@@ -1,7 +1,7 @@
 from typing import Callable
 from datetime import datetime
 
-from svc.types import Car, GroupedCarsByManufacturerAndModel, ScoredCar
+from api.types import Car, GroupedCarsByManufacturerAndModel, ScoredCar
     
 def groupBy[T](elements: list[T], equals: Callable[[T, T], bool]) -> list[list[T]]:
     grouped = []

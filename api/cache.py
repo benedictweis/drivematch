@@ -3,8 +3,8 @@ import os
 
 import msgspec
 
-from svc.types import Car
-from svc.scraping import CarsScraper
+from api.types import Car
+from api.scraping import CarsScraper
 
 class InMemoryCachingCarsScraper(CarsScraper):
     def __init__(self, carsScraper: CarsScraper):
