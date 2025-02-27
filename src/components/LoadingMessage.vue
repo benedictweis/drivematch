@@ -1,9 +1,9 @@
 <template>
-  <div id="loadingMessage">Analyzing...</div>
+  <div class="loadingMessage">Analyzing...</div>
 </template>
 
 <style scoped>
-#loadingMessage {
+.loadingMessage {
   position: fixed;
   top: 50%;
   left: 50%;
