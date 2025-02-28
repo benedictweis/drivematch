@@ -1,5 +1,10 @@
 # drivematch
 
+## Features to come
+
+- [ ] Parallel requests
+- [ ] API Redesign
+
 ## Project setup
 ```
 npm install

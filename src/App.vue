@@ -16,6 +16,8 @@ const defaultWeightPrice = -1;
 const defaultWeightMileage = -1;
 const defaultWeightAge = -1;
 
+const selectedGroupedCar = ref<GroupedCarsByManufacturerAndModel>();
+
 async function handleAnalyze({
   url,
   weightHP,
@@ -29,12 +31,31 @@ async function handleAnalyze({
   weightMileage: number;
   weightAge: number;
 }) {
+  let filterByManufacturer = "";
+  let filterByModel = "";
+  if (selectedGroupedCar.value !== undefined) {
+    filterByManufacturer = selectedGroupedCar.value.manufacturer;
+    filterByModel = selectedGroupedCar.value.model;
+  }
   loading.value = true;
-  const apiData = await fetchAPI(url, weightHP, weightPrice, weightMileage, weightAge);
+  const apiData = await fetchAPI(url, weightHP, weightPrice, weightMileage, weightAge, filterByManufacturer, filterByModel);
   scoredCars.value = apiData.scoredCars;
   groupedCars.value = apiData.groupedCars;
   await nextTick();
   loading.value = false;
+}
+
+function handleGroupedCarSelect(groupedCar: GroupedCarsByManufacturerAndModel) {
+  console.log("handleGroupedCarSelect", groupedCar);
+  if (
+    selectedGroupedCar.value &&
+    selectedGroupedCar.value.manufacturer === groupedCar.manufacturer &&
+    selectedGroupedCar.value.model === groupedCar.model
+  ) {
+    selectedGroupedCar.value = undefined;
+    return;
+  }
+  selectedGroupedCar.value = groupedCar;
 }
 </script>
 
@@ -80,7 +101,10 @@ async function handleAnalyze({
             `Average Price: ${Math.round(group.averagePrice)}€`,
             `Average Mileage: ${Math.round(group.averageMileage)}km`,
             `Average Horsepower: ${Math.round(group.averageHorsePower)}hp`,
+            `Average Age: ${Math.round(group.averageAge)} days`,
           ]"
+          @click="handleGroupedCarSelect(group)"
+          :selected="selectedGroupedCar && selectedGroupedCar.manufacturer === group.manufacturer && selectedGroupedCar.model === group.model"
         />
       </div>
     </div>

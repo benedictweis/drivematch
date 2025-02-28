@@ -31,12 +31,21 @@ class CarsAnalyzer:
     def getGroupedCars(self) -> list[GroupedCarsByManufacturerAndModel]:
         groupedCars = list[GroupedCarsByManufacturerAndModel]()
         for group in groupBy(self.cars, lambda car1, car2: car1.manufacturer == car2.manufacturer and car1.model == car2.model):
-            groupedCarsEntry = GroupedCarsByManufacturerAndModel(group[0].manufacturer, group[0].model, len(group), sum(car.price for car in group) / len(group), sum(car.mileage for car in group) / len(group), sum(car.horsePower for car in group) / len(group))
+            average_age = sum((datetime.now() - car.firstRegistration).days for car in group) / len(group)
+            groupedCarsEntry = GroupedCarsByManufacturerAndModel(
+                group[0].manufacturer, 
+                group[0].model, 
+                len(group), 
+                sum(car.price for car in group) / len(group), 
+                sum(car.mileage for car in group) / len(group), 
+                sum(car.horsePower for car in group) / len(group),
+                average_age
+            )
             groupedCars.append(groupedCarsEntry)
         groupedCars.sort(key=lambda x: x.count, reverse=True)
         return groupedCars
     
-    def getScoredCars(self, weight_hp: float = 1.0, weight_price: float = -1.0, weight_mileage: float = -1.0, weight_age: float = -1.0) -> list[ScoredCar]:
+    def getScoredCars(self, weight_hp: float = 1.0, weight_price: float = -1.0, weight_mileage: float = -1.0, weight_age: float = -1.0, filterByManufacturer = '', filterByModel = '') -> list[ScoredCar]:
         min_hp = min(car.horsePower for car in self.cars)
         max_hp = max(car.horsePower for car in self.cars)
         min_price = min(car.price for car in self.cars)
@@ -48,6 +57,10 @@ class CarsAnalyzer:
         
         scoredCars = [ScoredCar(car, self.score(car, min_hp=min_hp, max_hp=max_hp, min_price=min_price, max_price=max_price, min_mileage=min_mileage, max_mileage=max_mileage, min_age=min_age, max_age=max_age, weight_hp=weight_hp, weight_price=weight_price, weight_mileage=weight_mileage, weight_age=weight_age)) for car in self.cars]
         scoredCars = sorted(scoredCars, key=lambda x: x.score, reverse=True)
+        if filterByManufacturer != '':
+            scoredCars = [car for car in scoredCars if car.car.manufacturer == filterByManufacturer]
+        if filterByModel != '':
+            scoredCars = [car for car in scoredCars if car.car.model == filterByModel]
         return scoredCars
 
     def score(self, car: Car, min_hp: float, max_hp: float, min_price: float, max_price: float,

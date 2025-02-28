@@ -28,4 +28,5 @@ class GroupedCarsByManufacturerAndModel(msgspec.Struct):
     averagePrice: float
     averageMileage: float
     averageHorsePower: float
+    averageAge: float
     

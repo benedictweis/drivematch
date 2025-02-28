@@ -42,6 +42,7 @@ interface GroupedCarsByManufacturerAndModel {
     averagePrice: number;
     averageMileage: number;
     averageHorsePower: number;
+    averageAge: number;
 }
 
 export type { APIData, Car, ScoredCar, GroupedCarsByManufacturerAndModel };

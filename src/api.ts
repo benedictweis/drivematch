@@ -3,13 +3,15 @@ import { APIData } from "./types";
 /**
  * Starts and displays the analysis of the search results with the url defined in the form.
  */
-async function fetchAPI(url: string, weightHP: number, weightPrice: number, weightMileage: number, weightAge: number): Promise<APIData> {
+async function fetchAPI(url: string, weightHP: number, weightPrice: number, weightMileage: number, weightAge: number, filterByManufacturer: string, filterByModel: string): Promise<APIData> {
     const params = new URLSearchParams({
         url,
         weightHP: weightHP.toString(),
         weightPrice: weightPrice.toString(),
         weightMileage: weightMileage.toString(),
         weightAge: weightAge.toString(),
+        filterByManufacturer,
+        filterByModel
     });
 
     try {

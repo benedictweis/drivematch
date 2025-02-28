@@ -23,9 +23,11 @@ def hello_world():
     weightPrice = float(request.args.get('weightPrice', ''))
     weightMileage = float(request.args.get('weightMileage', ''))
     weightAge = float(request.args.get('weightAge', ''))
+    filterByManufacturer = request.args.get('filterByManufacturer', '')
+    filterByModel = request.args.get('filterByModel', '')
     cars = carsScraper.scrape(url)
     carsAnalyzer.setCars(cars)
-    scoredCars = carsAnalyzer.getScoredCars(weightHP, weightPrice, weightMileage, weightAge)
+    scoredCars = carsAnalyzer.getScoredCars(weightHP, weightPrice, weightMileage, weightAge, filterByManufacturer, filterByModel)
     groupedCars = carsAnalyzer.getGroupedCars()
     result = {
         "scoredCars": scoredCars,
