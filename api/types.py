@@ -20,7 +20,7 @@ class Car(msgspec.Struct):
 class ScoredCar(msgspec.Struct):
     car: Car
     score: float
-
+    
 class GroupedCarsByManufacturerAndModel(msgspec.Struct):
     manufacturer: str
     model: str
@@ -29,4 +29,7 @@ class GroupedCarsByManufacturerAndModel(msgspec.Struct):
     averageMileage: float
     averageHorsePower: float
     averageAge: float
-    
+
+class ScoredAndGroupedCars(msgspec.Struct):
+    scoredCars: list[ScoredCar]
+    groupedCars: list[GroupedCarsByManufacturerAndModel]

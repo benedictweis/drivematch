@@ -1,9 +1,9 @@
-import { APIData } from "./types";
+import { ScoredAndGroupedCars } from "./types";
 
 /**
  * Starts and displays the analysis of the search results with the url defined in the form.
  */
-async function fetchAPI(url: string, weightHP: number, weightPrice: number, weightMileage: number, weightAge: number, filterByManufacturer: string, filterByModel: string): Promise<APIData> {
+async function fetchAPI(url: string, weightHP: number, weightPrice: number, weightMileage: number, weightAge: number, filterByManufacturer: string, filterByModel: string): Promise<ScoredAndGroupedCars> {
     const params = new URLSearchParams({
         url,
         weightHP: weightHP.toString(),
@@ -17,7 +17,7 @@ async function fetchAPI(url: string, weightHP: number, weightPrice: number, weig
     try {
         const response = await fetch(`http://127.0.0.1:5000/api/v1/analyze?${params}`);
 
-        const data: APIData = await response.json();
+        const data: ScoredAndGroupedCars = await response.json();
 
         return data;
     } catch (error) {

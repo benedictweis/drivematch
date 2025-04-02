@@ -1,7 +1,7 @@
 /**
- * The APIData Object represents the data returned from the API.
+ * The ScoredAndGroupedCars Object represents the data returned from the API.
  */
-interface APIData {
+interface ScoredAndGroupedCars {
     scoredCars: ScoredCar[];
     groupedCars: GroupedCarsByManufacturerAndModel[];
 }
@@ -45,4 +45,4 @@ interface GroupedCarsByManufacturerAndModel {
     averageAge: number;
 }
 
-export type { APIData, Car, ScoredCar, GroupedCarsByManufacturerAndModel };
+export type { ScoredAndGroupedCars, Car, ScoredCar, GroupedCarsByManufacturerAndModel };
