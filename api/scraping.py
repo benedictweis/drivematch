@@ -1,16 +1,35 @@
 from datetime import datetime
+import random
 import time    
 
 from bs4 import BeautifulSoup, Tag
-import requests
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
+
 from abc import ABC, abstractmethod
 
 from api.types import Car
 
+user_agents = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
+    "Mozilla/5.0 (iPhone14,3; U; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) Version/10.0 Mobile/19A346 Safari/602.1"
+]
+
+firefox_options = Options()
+random_user_agent = random.choice(user_agents)
+firefox_options.add_argument(f"--user-agent={random_user_agent}")
+
+
 def getSoupFromURL(url):
-    response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.79 Safari/537.36'})
-    return BeautifulSoup(response.content, 'html.parser')
+    driver = webdriver.Firefox(options=firefox_options)
+    driver.get(url)
+    time.sleep(5)
+    source = driver.page_source
+    driver.quit()
+    return BeautifulSoup(source, 'html.parser')
 
 def getTextFromTag(input: Tag) -> str:
     return sanitizeString(input.get_text())
@@ -70,6 +89,7 @@ class MobileDeScraper(CarsScraper):
     def parseCarDetails(self, linkElement: Tag) -> Car:
         infoSpans = linkElement.find_all(lambda tag: tag.name == "span" and tag.getText(strip=True) != "Gesponsert" and tag.getText(strip=True) != "NEU")
         infos = [getTextFromTag(span) for span in infoSpans]
+        print(infos)
 
         makeModel = infos[0].split(" ")
         make = makeModel[0]
@@ -78,7 +98,7 @@ class MobileDeScraper(CarsScraper):
             price = int(infos[1].replace("€", "").replace(".", "").strip())
             description = ""
         except ValueError:
-            price = int(infos[2].replace("€", "").replace(".", "").strip())
+            price = int(infos[2].replace("€", "").replace(".", "").replace("¹", "").strip())
             description = infos[1]
 
         additionalInfos = getTextFromTag(linkElement.select_one("div > section > div > div")).split("•")

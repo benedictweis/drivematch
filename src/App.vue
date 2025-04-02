@@ -95,9 +95,8 @@ function handleGroupedCarSelect(groupedCar: GroupedCarsByManufacturerAndModel) {
         <ListEntry
           v-for="group in groupedCars"
           :key="group.manufacturer + group.model"
-          :title="`${group.manufacturer} ${group.model}`"
+          :title="`${group.manufacturer} ${group.model} (${group.count})`"
           :paragraphs="[
-            `Count: ${group.count}`,
             `Average Price: ${Math.round(group.averagePrice)}€`,
             `Average Mileage: ${Math.round(group.averageMileage)}km`,
             `Average Horsepower: ${Math.round(group.averageHorsePower)}hp`,
