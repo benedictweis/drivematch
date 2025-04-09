@@ -9,9 +9,9 @@ class DriveMatchService():
         self.carsScraper = carsScraper
         self.carsAnalyzer = carsAnalyzer
     
-    def scrapeAndAnalyze(self, url: str, weightHorsepower: float, weightPrice: float, weightMileage: float, weightAge: float, filterByManufacturer: str, filterByModel: str) -> ScoredAndGroupedCars:
+    def scrapeAndAnalyze(self, url: str, weightHorsepower: float, weightPrice: float, weightMileage: float, weightAge: float, preferredAge: float, filterByManufacturer: str, filterByModel: str) -> ScoredAndGroupedCars:
         cars = self.carsScraper.scrape(url)
         self.carsAnalyzer.setCars(cars)
-        scoredCars = self.carsAnalyzer.getScoredCars(weightHorsepower, weightPrice, weightMileage, weightAge, filterByManufacturer, filterByModel)
+        scoredCars = self.carsAnalyzer.getScoredCars(weightHorsepower, weightPrice, weightMileage, weightAge, preferredAge, filterByManufacturer, filterByModel)
         groupedCars = self.carsAnalyzer.getGroupedCars()
         return ScoredAndGroupedCars(scoredCars, groupedCars)

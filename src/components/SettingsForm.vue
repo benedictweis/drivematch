@@ -6,6 +6,7 @@ const props = defineProps({
   defaultWeightPrice: Number,
   defaultWeightMileage: Number,
   defaultWeightAge: Number,
+  defaultPreferredAge: Number,
 });
 
 const emits = defineEmits(["analyze"]);
@@ -18,6 +19,7 @@ function handleAnalyze(event: Event) {
   const weightPrice = (form.elements.namedItem("price") as HTMLInputElement).valueAsNumber;
   const weightMileage = (form.elements.namedItem("mileage") as HTMLInputElement).valueAsNumber;
   const weightAge = (form.elements.namedItem("age") as HTMLInputElement).valueAsNumber;
+  const preferredAge = (form.elements.namedItem("preferredAge") as HTMLInputElement).valueAsNumber;
 
   emits("analyze", {
     url,
@@ -25,6 +27,7 @@ function handleAnalyze(event: Event) {
     weightPrice,
     weightMileage,
     weightAge,
+    preferredAge,
   });
 }
 </script>
@@ -45,6 +48,9 @@ function handleAnalyze(event: Event) {
 
     <label for="age">Age Weight:</label>
     <input type="number" id="age" name="age" min="-100" max="100" :value="defaultWeightAge" required /><br /><br />
+
+    <label for="age">Preferred Age (in days):</label>
+    <input type="number" id="preferredAge" name="preferredAge" min="0" max="1000000" :value="defaultPreferredAge" required /><br /><br />
 
     <button type="submit">Analyze</button>
   </form>

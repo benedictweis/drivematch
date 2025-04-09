@@ -15,6 +15,7 @@ const defaultWeightHP = 1;
 const defaultWeightPrice = -1;
 const defaultWeightMileage = -1;
 const defaultWeightAge = -1;
+const defaultPreferredAge = 0;
 
 const selectedGroupedCar = ref<GroupedCarsByManufacturerAndModel>();
 
@@ -24,12 +25,14 @@ async function handleAnalyze({
   weightPrice,
   weightMileage,
   weightAge,
+  preferredAge,
 }: {
   url: string;
   weightHP: number;
   weightPrice: number;
   weightMileage: number;
   weightAge: number;
+  preferredAge: number;
 }) {
   let filterByManufacturer = "";
   let filterByModel = "";
@@ -38,7 +41,7 @@ async function handleAnalyze({
     filterByModel = selectedGroupedCar.value.model;
   }
   loading.value = true;
-  const apiData = await fetchAPI(url, weightHP, weightPrice, weightMileage, weightAge, filterByManufacturer, filterByModel);
+  const apiData = await fetchAPI(url, weightHP, weightPrice, weightMileage, weightAge, preferredAge, filterByManufacturer, filterByModel);
   scoredCars.value = apiData.scoredCars;
   groupedCars.value = apiData.groupedCars;
   await nextTick();
@@ -68,6 +71,7 @@ function handleGroupedCarSelect(groupedCar: GroupedCarsByManufacturerAndModel) {
         :defaultWeightPrice="defaultWeightPrice"
         :defaultWeightMileage="defaultWeightMileage"
         :defaultWeightAge="defaultWeightAge"
+        :defaultPreferredAge="defaultPreferredAge"
         @analyze="handleAnalyze"
       />
     </div>

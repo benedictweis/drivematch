@@ -27,8 +27,9 @@ def analyze():
     weightPrice = float(request.args.get('weightPrice', ''))
     weightMileage = float(request.args.get('weightMileage', ''))
     weightAge = float(request.args.get('weightAge', ''))
+    preferredAge = float(request.args.get('preferredAge', ''))
     filterByManufacturer = request.args.get('filterByManufacturer', '')
     filterByModel = request.args.get('filterByModel', '')
-    result = driveMatchService.scrapeAndAnalyze(url, weightHP, weightPrice, weightMileage, weightAge, filterByManufacturer, filterByModel)
+    result = driveMatchService.scrapeAndAnalyze(url, weightHP, weightPrice, weightMileage, weightAge, preferredAge, filterByManufacturer, filterByModel)
     return jsonResponse(result)
     
