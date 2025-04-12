@@ -394,3 +394,4 @@ $RECYCLE.BIN/
 ### Custom ###
 venv
 cache
+data.db
