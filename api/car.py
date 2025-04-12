@@ -1,9 +1,8 @@
 from datetime import datetime
+from pydantic import BaseModel
 
-import msgspec
 
-
-class Car(msgspec.Struct):
+class Car(BaseModel):
     id: str
     manufacturer: str
     model: str
@@ -18,12 +17,12 @@ class Car(msgspec.Struct):
     image_url: str
 
 
-class ScoredCar(msgspec.Struct):
+class ScoredCar(BaseModel):
     car: Car
     score: float
 
 
-class GroupedCarsByManufacturerAndModel(msgspec.Struct):
+class GroupedCarsByManufacturerAndModel(BaseModel):
     manufacturer: str
     model: str
     count: int
@@ -33,6 +32,6 @@ class GroupedCarsByManufacturerAndModel(msgspec.Struct):
     average_age: float
 
 
-class ScoredAndGroupedCars(msgspec.Struct):
+class ScoredAndGroupedCars(BaseModel):
     scored_cars: list[ScoredCar]
     grouped_cars: list[GroupedCarsByManufacturerAndModel]

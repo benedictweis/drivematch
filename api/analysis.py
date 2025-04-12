@@ -42,16 +42,16 @@ class CarsAnalyzer:
             and car1.model == car2.model
         ):
             average_age = sum(
-                (datetime.now() - car.firstRegistration).days for car in group
+                (datetime.now() - car.first_registration).days for car in group
             ) / len(group)
             grouped_cars_entry = GroupedCarsByManufacturerAndModel(
-                group[0].manufacturer,
-                group[0].model,
-                len(group),
-                sum(car.price for car in group) / len(group),
-                sum(car.mileage for car in group) / len(group),
-                sum(car.horsePower for car in group) / len(group),
-                average_age
+                manufacturer=group[0].manufacturer,
+                model=group[0].model,
+                count=len(group),
+                average_price=sum(car.price for car in group) / len(group),
+                average_mileage=sum(car.mileage for car in group) / len(group),
+                average_horse_power=sum(car.horse_power for car in group) / len(group),
+                average_age=average_age
             )
             grouped_cars.append(grouped_cars_entry)
         grouped_cars.sort(key=lambda x: x.count, reverse=True)
@@ -76,22 +76,24 @@ class CarsAnalyzer:
         self.filter_by_model = filter_by_model
 
     def get_scored_cars(self) -> list[ScoredCar]:
-        self.min_hp = min(car.horsePower for car in self.cars)
-        self.max_hp = max(car.horsePower for car in self.cars)
+        self.min_hp = min(car.horse_power for car in self.cars)
+        self.max_hp = max(car.horse_power for car in self.cars)
         self.min_price = min(car.price for car in self.cars)
         self.max_price = max(car.price for car in self.cars)
         self.min_mileage = min(car.mileage for car in self.cars)
         self.max_mileage = max(car.mileage for car in self.cars)
         self.min_age = min(
-            (datetime.now() - car.firstRegistration).days
+            (datetime.now() - car.first_registration).days
             for car in self.cars
         )
         self.max_age = max(
-            (datetime.now() - car.firstRegistration).days
+            (datetime.now() - car.first_registration).days
             for car in self.cars
         )
 
-        scored_cars = [ScoredCar(car, self.score(car)) for car in self.cars]
+        scored_cars = [ScoredCar(
+            car=car,
+            score=self.score(car)) for car in self.cars]
         scored_cars = sorted(scored_cars, key=lambda x: x.score, reverse=True)
         if self.filter_by_manufacturer != '':
             scored_cars = [
@@ -106,10 +108,10 @@ class CarsAnalyzer:
         return scored_cars
 
     def score(self, car: Car) -> float:
-        age = (datetime.now() - car.firstRegistration).days
+        age = (datetime.now() - car.first_registration).days
         age = abs(age - self.preferred_age)
 
-        normalized_hp = normalize(car.horsePower, self.min_hp, self.max_hp)
+        normalized_hp = normalize(car.horse_power, self.min_hp, self.max_hp)
         normalized_price = normalize(car.price, self.min_price, self.max_price)
         normalized_mileage = normalize(
             car.mileage, self.min_mileage, self.max_mileage

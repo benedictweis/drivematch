@@ -87,6 +87,8 @@ class MobileDeScraper(CarsScraper):
 
     def amount_of_pages(self, page: Tag) -> int:
         nav = page.find("nav", attrs={"aria-label": "Weitere Angebote"})
+        if nav is None:
+            return 1
         li_elements = nav.find_all("li")
         second_last_li = li_elements[-2]
         return int(get_text_from_tag(second_last_li))
@@ -94,8 +96,7 @@ class MobileDeScraper(CarsScraper):
     def get_cars_from_page(self, url) -> list[Car]:
         soup = get_soup_from_url(url)
         links = soup.select(
-            """article > section > div > div
-            > a[href^='/fahrzeuge/details.html?']"""
+            "article > section > div > div > a[href^='/fahrzeuge/details.html?']"
         )
         cars = [self.parse_car_details(link) for link in links]
         return cars
@@ -107,7 +108,6 @@ class MobileDeScraper(CarsScraper):
             and tag.get_text(strip=True) != "NEU"
         )
         infos = [get_text_from_tag(span) for span in info_spans]
-        print(infos)
 
         make_model = infos[0].split(" ")
         make = make_model[0]
@@ -169,16 +169,16 @@ class MobileDeScraper(CarsScraper):
             image_url = img.get("src")
 
         return Car(
-            car_id,
-            make,
-            model,
-            description,
-            price,
-            attributes,
-            first_registration,
-            mileage,
-            horse_power,
-            fuel_type,
-            details_url,
-            image_url,
+            id=car_id,
+            manufacturer=make,
+            model=model,
+            description=description,
+            price=price,
+            attributes=attributes,
+            first_registration=first_registration,
+            mileage=mileage,
+            horse_power=horse_power,
+            fuel_type=fuel_type,
+            details_url=details_url,
+            image_url=image_url,
         )

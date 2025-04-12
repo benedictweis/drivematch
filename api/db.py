@@ -1,13 +1,13 @@
-import msgspec
 import sqlite3
 
 from abc import ABC, abstractmethod
+from pydantic import BaseModel
 
 from api.car import Car
 from datetime import datetime
 
 
-class SearchInfo(msgspec.Struct):
+class SearchInfo(BaseModel):
     id: str
     name: str
     url: str
@@ -33,7 +33,7 @@ class SearchesRepository(ABC):
 
 class SQLiteSearchesRepository(SearchesRepository):
     def __init__(self, db_path: str):
-        self.connection = sqlite3.connect(db_path)
+        self.connection = sqlite3.connect(db_path, check_same_thread=False)
         self.cursor = self.connection.cursor()
 
     def insert_cars_for_search(
@@ -41,15 +41,19 @@ class SQLiteSearchesRepository(SearchesRepository):
     ):
         current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.cursor.execute(
-            """INSERT INTO searches (id, name, url, timestamp)
-            VALUES (?, ?, ?, ?)""",
+            (
+                "INSERT INTO searches (id, name, url, timestamp)"
+                "VALUES (?, ?, ?, ?)"
+            ),
             (search_id, name, url, current_datetime)
         )
         self.cursor.executemany(
-            """INSERT INTO cars (id, timestamp, manufacturer, model,
-            description, price, attributes, firstRegistration, mileage,
-            horsePower, fuelType, detailsURL, imageURL) "
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                "INSERT INTO cars (id, timestamp, manufacturer, model,"
+                "description, price, attributes, firstRegistration, mileage,"
+                "horsePower, fuelType, detailsURL, imageURL)"
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            ),
             [
                 (
                     car.id,
@@ -59,29 +63,36 @@ class SQLiteSearchesRepository(SearchesRepository):
                     car.description,
                     car.price,
                     ",".join(car.attributes),
-                    car.firstRegistration,
+                    car.first_registration.strftime("%Y-%m-%d"),
                     car.mileage,
-                    car.horsePower,
-                    car.fuelType,
-                    car.detailsURL,
-                    car.imageURL,
+                    car.horse_power,
+                    car.fuel_type,
+                    car.details_url,
+                    car.image_url,
                 )
                 for car in cars
             ],
         )
-        self.cursor.executemany("""INSERT INTO searches_cars (search_id,
-                                car_id)
-                                VALUES (?, ?)""",
-                                [(search_id, car.id) for car in cars])
+        self.cursor.executemany(
+            "INSERT INTO searches_cars (search_id, car_id) VALUES (?, ?)",
+            [(search_id, car.id) for car in cars])
         self.connection.commit()
 
     def get_cars_for_search(self, search_id: str) -> list[Car]:
         self.cursor.execute("""
+            SELECT timestamp
+            FROM searches
+            WHERE id = ?
+        """, (search_id,))
+        search_timestamp = self.cursor.fetchone()[0]
+        if search_timestamp is None:
+            raise ValueError(f"No search found with id {search_id}")
+        self.cursor.execute("""
             SELECT cars.*
             FROM cars
             INNER JOIN searches_cars ON cars.id = searches_cars.car_id
-            WHERE searches_cars.search_id = ?
-        """, (search_id,))
+            WHERE searches_cars.search_id = ? AND cars.timestamp = ?
+        """, (search_id, search_timestamp))
         rows = self.cursor.fetchall()
         cars = []
         for row in rows:
@@ -92,13 +103,12 @@ class SQLiteSearchesRepository(SearchesRepository):
                 description=row[4],
                 price=row[5],
                 attributes=row[6].split(","),
-                firstRegistration=datetime.strptime(row[7],
-                                                    "%Y-%m-%d %H:%M:%S"),
+                first_registration=datetime.strptime(row[7], "%Y-%m-%d"),
                 mileage=row[8],
-                horsePower=row[9],
-                fuelType=row[10],
-                detailsURL=row[11],
-                imageURL=row[12]
+                horse_power=row[9],
+                fuel_type=row[10],
+                details_url=row[11],
+                image_url=row[12]
             )
             cars.append(car)
         return cars
@@ -124,7 +134,7 @@ if __name__ == "__main__":
     db_path = "data.db"
     repository = SQLiteSearchesRepository(db_path)
 
-    search_id = "search123"
+    search_id = "search123456"
     name = "Example Search"
     url = "http://example.com"
     cars = [
@@ -135,12 +145,12 @@ if __name__ == "__main__":
             description="A reliable car",
             price=20000,
             attributes=["automatic", "sedan"],
-            firstRegistration=datetime.now(),
+            first_registration=datetime.now(),
             mileage=15000,
-            horsePower=150,
-            fuelType="Petrol",
-            detailsURL="http://example.com/car1",
-            imageURL="http://example.com/car1.jpg"
+            horse_power=150,
+            fuel_type="Petrol",
+            details_url="http://example.com/car1",
+            image_url="http://example.com/car1.jpg"
         )
     ]
 

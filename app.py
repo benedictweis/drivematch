@@ -1,8 +1,8 @@
-from flask import Flask, request
-from flask_cors import CORS
-import msgspec
+from fastapi import FastAPI
+from pydantic import BaseModel
 
-from api.db import SQLiteSearchesRepository
+from api.car import ScoredAndGroupedCars
+from api.db import SQLiteSearchesRepository, SearchInfo
 from api.scraping import MobileDeScraper
 from api.analysis import CarsAnalyzer
 from api.service import DriveMatchService
@@ -14,28 +14,33 @@ drive_match_service = DriveMatchService(
     MobileDeScraper(),
     CarsAnalyzer())
 
-app = Flask(__name__)
-cors = CORS(app)
-app.config['CORS_HEADERS'] = 'Content-Type'
+app = FastAPI()
 
 
-def json_response(content):
-    return app.response_class(
-        response=str(msgspec.json.encode(content).decode('utf-8')),
-        mimetype='application/json')
+class ScrapeRequest(BaseModel):
+    name: str
+    url: str
 
 
-@app.get("/api/v1/analyze")
-def analyze():
-    search_id = request.args.get('searchID', '')
-    weight_hp = float(request.args.get('weightHP', ''))
-    weight_price = float(request.args.get('weightPrice', ''))
-    weight_mileage = float(request.args.get('weightMileage', ''))
-    weight_age = float(request.args.get('weightAge', ''))
-    preferred_age = float(request.args.get('preferredAge', ''))
-    filter_by_manufacturer = request.args.get('filterByManufacturer', '')
-    filter_by_model = request.args.get('filterByModel', '')
-    result = drive_match_service.analyze(
+@app.get("/api/v2/scrape")
+def scrape(scrapeRequest: ScrapeRequest):
+    drive_match_service.scrape(scrapeRequest.name, scrapeRequest.url)
+
+
+@app.get("/api/v2/analyze")
+def analyze(search_id: str,
+            weight_hp: float,
+            weight_price: float,
+            weight_mileage: float,
+            weight_age: float,
+            preferred_age: float,
+            filter_by_manufacturer: str,
+            filter_by_model: str) -> ScoredAndGroupedCars:
+    return drive_match_service.analyze(
         search_id, weight_hp, weight_price, weight_mileage, weight_age,
         preferred_age, filter_by_manufacturer, filter_by_model)
-    return json_response(result)
+
+
+@app.get("/api/v2/searches")
+def searches() -> list[SearchInfo]:
+    return drive_match_service.get_searches()

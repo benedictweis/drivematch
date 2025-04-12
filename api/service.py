@@ -13,14 +13,16 @@ class DriveMatchService():
         cars_scraper: CarsScraper,
         cars_analyzer: CarsAnalyzer
     ):
-        self.searchesRepository = searches_repository
-        self.carsScraper = cars_scraper
-        self.carsAnalyzer = cars_analyzer
+        self.searches_repository = searches_repository
+        self.cars_scraper = cars_scraper
+        self.cars_analyzer = cars_analyzer
 
     def scrape(self, name: str, url: str):
         cars = self.cars_scraper.scrape(url)
         search_id = str(uuid.uuid4())
-        self.searchesRepository.insertCarsForSearch(search_id, name, url, cars)
+        self.searches_repository.insert_cars_for_search(
+            search_id, name, url, cars
+        )
 
     def analyze(
         self,
@@ -33,9 +35,9 @@ class DriveMatchService():
         filter_by_manufacturer: str,
         filter_by_model: str,
     ) -> ScoredAndGroupedCars:
-        cars = self.searchesRepository.getCarsForSearch(search_id)
-        self.carsAnalyzer.set_cars(cars)
-        scored_cars = self.carsAnalyzer.getScoredCars(
+        cars = self.searches_repository.get_cars_for_search(search_id)
+        self.cars_analyzer.set_cars(cars)
+        self.cars_analyzer.set_weights_and_filters(
             weight_horsepower,
             weight_price,
             weight_mileage,
@@ -44,8 +46,11 @@ class DriveMatchService():
             filter_by_manufacturer,
             filter_by_model,
         )
-        grouped_cars = self.carsAnalyzer.get_grouped_cars()
-        return ScoredAndGroupedCars(scored_cars, grouped_cars)
+        scored_cars = self.cars_analyzer.get_scored_cars()
+        grouped_cars = self.cars_analyzer.get_grouped_cars()
+        return ScoredAndGroupedCars(
+            scored_cars=scored_cars,
+            grouped_cars=grouped_cars)
 
     def get_searches(self):
-        return self.searchesRepository.getSearches()
+        return self.searches_repository.get_searches()
