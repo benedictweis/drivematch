@@ -76,7 +76,7 @@ def scores(search_id: Annotated[str, typer.Option("--search-id", "-s", help="The
         preferred_age,
         filter_by_manufacturer,
         filter_by_model)
-    scores_table = Table(title="Scored Cars")
+    scores_table = Table(title=f"Scored Cars ({len(scored_cars)} cars)")
     scores_table.add_column("Manufacturer", justify="left", style="cyan")
     scores_table.add_column("Model", justify="left", style="magenta")
     scores_table.add_column("Price", justify="center", style="blue")
@@ -100,7 +100,7 @@ def scores(search_id: Annotated[str, typer.Option("--search-id", "-s", help="The
 @app.command(short_help="Show the groups of cars for a search")
 def groups(search_id: Annotated[str, typer.Option("--search-id", "-s", help="The ID of the search (first unique characters are enough)")]):
     grouped_cars = drivematch_service.get_groups(search_id_matches(search_id))
-    groups_table = Table(title="Grouped Cars")
+    groups_table = Table(title=f"Grouped Cars ({len(grouped_cars)} groups)")
     groups_table.add_column("Manufacturer", justify="left", style="cyan")
     groups_table.add_column("Model", justify="left", style="magenta")
     groups_table.add_column("Count", justify="center", style="white")

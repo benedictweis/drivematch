@@ -1,6 +1,6 @@
 import sqlite3
 
-connection = sqlite3.connect("data.db")
+connection = sqlite3.connect("drivematch.db")
 cursor = connection.cursor()
 
 cursor.execute("CREATE TABLE IF NOT EXISTS searches (id TEXT PRIMARY KEY, name TEXT, url TEXT, timestamp DATETIME)")
