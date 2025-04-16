@@ -3,7 +3,7 @@ import sqlite3
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
 
-from api.car import Car
+from car import Car
 from datetime import datetime
 
 

@@ -1,15 +1,15 @@
 import uuid
 
-from api.analysis import CarsAnalyzer
-from api.scraping import CarsScraper
-from api.car import GroupedCarsByManufacturerAndModel, ScoredCar
-from api.db import SearchInfo, SearchesRepository
+from analysis import CarsAnalyzer
+from scraping import CarsScraper
+from car import GroupedCarsByManufacturerAndModel, ScoredCar
+from db import SearchInfo, SearchesRepository
 
 
 def create_default_drivematch_service(db_path: str):
-    from api.db import SQLiteSearchesRepository
-    from api.scraping import MobileDeScraper
-    from api.analysis import CarsAnalyzer
+    from db import SQLiteSearchesRepository
+    from scraping import MobileDeScraper
+    from analysis import CarsAnalyzer
 
     return DriveMatchService(
         SQLiteSearchesRepository(db_path),

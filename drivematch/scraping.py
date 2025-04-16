@@ -8,7 +8,7 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from abc import ABC, abstractmethod
 
-from api.car import Car
+from car import Car
 
 user_agents = [
     """Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,

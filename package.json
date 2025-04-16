@@ -1,7 +1,7 @@
 {
   "name": "drivematch",
   "version": "0.2.1",
-  "private": true,
+  "license": "Apache 2.0""private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build"

@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from api.service import create_default_drivematch_service
+from service import create_default_drivematch_service
 
 app = typer.Typer()
 console = Console()
