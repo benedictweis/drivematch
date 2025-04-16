@@ -2,8 +2,20 @@ import uuid
 
 from api.analysis import CarsAnalyzer
 from api.scraping import CarsScraper
-from api.car import ScoredAndGroupedCars
-from api.db import SearchesRepository
+from api.car import GroupedCarsByManufacturerAndModel, ScoredCar
+from api.db import SearchInfo, SearchesRepository
+
+
+def create_default_drivematch_service(db_path: str):
+    from api.db import SQLiteSearchesRepository
+    from api.scraping import MobileDeScraper
+    from api.analysis import CarsAnalyzer
+
+    return DriveMatchService(
+        SQLiteSearchesRepository(db_path),
+        MobileDeScraper(),
+        CarsAnalyzer()
+    )
 
 
 class DriveMatchService():
@@ -24,7 +36,7 @@ class DriveMatchService():
             search_id, name, url, cars
         )
 
-    def analyze(
+    def get_scores(
         self,
         search_id: str,
         weight_horsepower: float,
@@ -34,7 +46,7 @@ class DriveMatchService():
         preferred_age: float,
         filter_by_manufacturer: str,
         filter_by_model: str,
-    ) -> ScoredAndGroupedCars:
+    ) -> list[ScoredCar]:
         cars = self.searches_repository.get_cars_for_search(search_id)
         self.cars_analyzer.set_cars(cars)
         self.cars_analyzer.set_weights_and_filters(
@@ -46,11 +58,14 @@ class DriveMatchService():
             filter_by_manufacturer,
             filter_by_model,
         )
-        scored_cars = self.cars_analyzer.get_scored_cars()
-        grouped_cars = self.cars_analyzer.get_grouped_cars()
-        return ScoredAndGroupedCars(
-            scored_cars=scored_cars,
-            grouped_cars=grouped_cars)
+        return self.cars_analyzer.get_scored_cars()
 
-    def get_searches(self):
+    def get_groups(
+        self, search_id: str
+    ) -> list[GroupedCarsByManufacturerAndModel]:
+        cars = self.searches_repository.get_cars_for_search(search_id)
+        self.cars_analyzer.set_cars(cars)
+        return self.cars_analyzer.get_grouped_cars()
+
+    def get_searches(self) -> list[SearchInfo]:
         return self.searches_repository.get_searches()

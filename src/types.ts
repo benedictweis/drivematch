@@ -45,4 +45,12 @@ interface GroupedCarsByManufacturerAndModel {
     averageAge: number;
 }
 
-export type { ScoredAndGroupedCars, Car, ScoredCar, GroupedCarsByManufacturerAndModel };
+interface SearchInfo {
+    id: string
+    name: string
+    url: string
+    amount_of_cars: number
+    date: string
+}
+
+export type { ScoredAndGroupedCars, Car, ScoredCar, GroupedCarsByManufacturerAndModel, SearchInfo };

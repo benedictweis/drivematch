@@ -30,8 +30,3 @@ class GroupedCarsByManufacturerAndModel(BaseModel):
     average_mileage: float
     average_horse_power: float
     average_age: float
-
-
-class ScoredAndGroupedCars(BaseModel):
-    scored_cars: list[ScoredCar]
-    grouped_cars: list[GroupedCarsByManufacturerAndModel]

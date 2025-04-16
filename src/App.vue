@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref } from "vue";
 import { ScoredCar, GroupedCarsByManufacturerAndModel } from "./types";
-import fetchAPI from "./api";
+import fetchAPI from "./drivematchclient";
 import SettingsForm from "./components/SettingsForm.vue";
 import ListEntry from "./components/ListEntry.vue";
 import LoadingMessage from "./components/LoadingMessage.vue";
