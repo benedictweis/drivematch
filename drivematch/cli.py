@@ -3,8 +3,9 @@ from typing_extensions import Annotated
 import typer
 from rich.console import Console
 from rich.table import Table
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.progress import Progress, BarColumn, TextColumn
 
+from progress import RichProgressReporter
 from service import create_default_drivematch_service
 
 app = typer.Typer()
@@ -47,15 +48,7 @@ def scrape(
     name: Annotated[str, typer.Argument(help="The name of the search you are scraping")],
     url: Annotated[str, typer.Argument(help="The url of the search you are scraping")]
 ):
-    progress = Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-    )
-    progress.add_task(description="Scraping url...", total=None)
-    progress.start()
     drivematch_service.scrape(name, url)
-    progress.stop()
-    console.print("Done scraping.")
 
 
 @app.command(short_help="Score the results of a search with the given weights")

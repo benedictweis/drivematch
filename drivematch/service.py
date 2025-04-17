@@ -1,6 +1,7 @@
 import uuid
 
 from analysis import CarsAnalyzer
+from progress import ProgressReporter
 from scraping import CarsScraper
 from car import GroupedCarsByManufacturerAndModel, ScoredCar
 from db import SearchInfo, SearchesRepository

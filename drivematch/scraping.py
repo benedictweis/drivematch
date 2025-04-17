@@ -1,39 +1,21 @@
 from datetime import datetime
 import random
 import time
-from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from abc import ABC, abstractmethod
 
-from car import Car
+from rich.progress import Progress
 
-user_agents = [
-    """Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
-     like Gecko) Chrome/92.0.4515.159 Safari/537.36""",
-    """Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
-     like Gecko) Chrome/91.0.4472.124 Safari/537.36""",
-    """Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
-     like Gecko) Chrome/90.0.4430.212 Safari/537.36""",
-    """Mozilla/5.0 (iPhone14,3; U; CPU iPhone OS 15_0 like Mac OS X)
-     AppleWebKit/602.1.50 (KHTML, like Gecko) Version/10.0 Mobile/19A346
-      Safari/602.1"""
-]
+from car import Car
+from progress import ProgressReporter
 
 firefox_options = Options()
-random_user_agent = random.choice(user_agents)
-firefox_options.add_argument(f"--user-agent={random_user_agent}")
-
-
-def get_soup_from_url(url):
-    driver = webdriver.Firefox(options=firefox_options)
-    driver.get(url)
-    time.sleep(5)
-    source = driver.page_source
-    driver.quit()
-    return BeautifulSoup(source, 'html.parser')
+firefox_options.add_argument("--window-size=1920,1080")
+# firefox_options.add_argument("--headless")
 
 
 def get_text_from_tag(input_tag: Tag) -> str:
@@ -52,49 +34,44 @@ class CarsScraper(ABC):
 
 class MobileDeScraper(CarsScraper):
     def scrape(self, url: str) -> list[Car]:
-        page_urls = self.get_page_urls(url)
+        soups = self.get_soups(url)
         cars = []
-        current_page = 0
-        for page_url in page_urls:
-            print(f"{round(current_page / len(page_urls) * 100)}%")
-            current_page += 1
-            cars.extend(self.get_cars_from_page(page_url))
-            time.sleep(1)
-        print("100%")
+        for soup in soups:
+            cars.extend(self.get_cars_from_soup(soup))
         cars = list({car.id: car for car in cars}.values())
         return cars
 
-    def get_page_urls(self, url: str) -> list[str]:
-        soup = get_soup_from_url(url)
+    def get_soups(self, url: str) -> list[BeautifulSoup]:
+        driver = webdriver.Firefox(options=firefox_options)
+        driver.delete_all_cookies()
+        driver.get(url)
+        soups = []
+        nav_element = driver.find_element(By.CSS_SELECTOR, "nav[aria-label='Weitere Angebote']")
+        second_to_last_li = nav_element.find_elements(By.CSS_SELECTOR, "ul > li")[-2]
+        page_count = float(second_to_last_li.text.strip())
+        progress = Progress()
+        task = progress.add_task("Loading pages", total=page_count)
+        progress.start()
+        time.sleep(random.uniform(1, 2))
+        consent_button = driver.find_element(By.CLASS_NAME, "mde-consent-accept-btn")
+        consent_button.click()
+        time.sleep(random.uniform(1, 2))
+        while True:
+            try:
+                progress.advance(task)
+                soups.append(BeautifulSoup(driver.page_source, "html.parser"))
+                next_page = driver.find_element(
+                    By.CSS_SELECTOR, "button[aria-label='Weiter']"
+                )
+                next_page.click()
+                time.sleep(random.uniform(3, 5))
+            except Exception:
+                break
+        driver.quit()
+        progress.stop()
+        return soups
 
-        pages = self.amount_of_pages(soup)
-        print(f"Found {pages} pages in search")
-
-        page_urls = [
-            self.set_page_number(url, page_number)
-            for page_number in range(1, pages + 1)
-        ]
-
-        return page_urls
-
-    def set_page_number(self, url: str, page_number: int) -> str:
-        url_parts = urlparse(url)
-        query = parse_qs(url_parts.query)
-        query["pageNumber"] = [str(page_number)]
-        new_query = urlencode(query, doseq=True)
-        url_parts = url_parts._replace(query=new_query)
-        return urlunparse(url_parts)
-
-    def amount_of_pages(self, page: Tag) -> int:
-        nav = page.find("nav", attrs={"aria-label": "Weitere Angebote"})
-        if nav is None:
-            return 1
-        li_elements = nav.find_all("li")
-        second_last_li = li_elements[-2]
-        return int(get_text_from_tag(second_last_li))
-
-    def get_cars_from_page(self, url) -> list[Car]:
-        soup = get_soup_from_url(url)
+    def get_cars_from_soup(self, soup: BeautifulSoup) -> list[Car]:
         links = soup.select(
             "article > section > div > div > a[href^='/fahrzeuge/details.html?']"
         )
