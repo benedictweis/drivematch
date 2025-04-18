@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QApplication, QDialog, QGridLayout, QLabel, QScrollArea, QWidget,
     QVBoxLayout, QComboBox, QDoubleSpinBox, QTableWidget, QTableWidgetItem,
-    QCheckBox
+    QCheckBox, QSplitter
 )
 from PySide6.QtCore import Qt
 
@@ -12,6 +12,7 @@ from drivematch.service import create_default_drivematch_service
 class DriveMatch(QDialog):
     drive_match_service: DriveMatchService
     main_layout: QGridLayout
+    splitter: QSplitter
     filters_layout: QVBoxLayout
     search_dropdown: QComboBox
     date_dropdown: QComboBox
@@ -34,16 +35,12 @@ class DriveMatch(QDialog):
 
         # Set column stretch to make the middle column twice as wide
         self.main_layout.setColumnStretch(0, 1)  # Filters column
-        self.main_layout.setColumnStretch(1, 3)  # Scored Cars column
-        self.main_layout.setColumnStretch(2, 2)  # Grouped Cars column
-
-        # Add titles to the columns
-        self.main_layout.addWidget(QLabel("Filters"), 0, 0)
-        self.main_layout.addWidget(QLabel("Scored Cars"), 0, 1)
-        self.main_layout.addWidget(QLabel("Grouped Cars"), 0, 2)
+        self.main_layout.setColumnStretch(1, 4)  # Scored Cars column
 
         # Create filters section
         self.filters_layout = QVBoxLayout()
+        
+        self.filters_layout.addWidget(QLabel("Filters"))
 
         # Search filter
         self.filters_layout.addWidget(QLabel("Search:"))
@@ -80,24 +77,35 @@ class DriveMatch(QDialog):
         # Add filters section to the main layout
         filters_widget = QWidget()
         filters_widget.setLayout(self.filters_layout)
-        self.main_layout.addWidget(filters_widget, 1, 0)
+        self.main_layout.addWidget(filters_widget, 0, 0)
 
-        # Create scrollable containers for the middle and last columns
-        scored_cars_container = self.create_scrollable_container(1, 1)
+        # Create a splitter for Scored Cars and Grouped Cars
+        self.splitter = QSplitter(Qt.Horizontal)
+        self.main_layout.addWidget(self.splitter, 0, 1)
+
+        scored_cars_layout = QVBoxLayout()
+        scored_cars_layout.addWidget(QLabel("Scored Cars"))
         # Create a table to display scored cars
         self.scored_cars_table = self.create_table([
             "Manufacturer", "Model", "Price", "Mileage", "Horsepower",
             "Fuel Type", "First Registration", "Details"
         ])
-        scored_cars_container.layout().addWidget(self.scored_cars_table)
+        scored_cars_layout.addWidget(self.scored_cars_table)
+        scored_cars_widget = QWidget()
+        scored_cars_widget.setLayout(scored_cars_layout)
+        self.splitter.addWidget(scored_cars_widget)
 
-        grouped_cars_container = self.create_scrollable_container(1, 2)
+        grouped_cars_layout = QVBoxLayout()
+        grouped_cars_layout.addWidget(QLabel("Grouped Cars"))
         # Create a table to display grouped cars
         self.grouped_cars_table = self.create_table([
             "Selected", "Manufacturer", "Model", "Count", "Avg. Price", "Avg. Mileage",
             "Avg. Horsepower", "Avg. Age"
         ])
-        grouped_cars_container.layout().addWidget(self.grouped_cars_table)
+        grouped_cars_layout.addWidget(self.grouped_cars_table)
+        grouped_cars_widget = QWidget()
+        grouped_cars_widget.setLayout(grouped_cars_layout)
+        self.splitter.addWidget(grouped_cars_widget)
 
         self.set_searches()
 
@@ -111,16 +119,6 @@ class DriveMatch(QDialog):
         spinbox.valueChanged.connect(self.set_scored_cars)
         self.filters_layout.addWidget(spinbox)
         return spinbox
-
-    def create_scrollable_container(self, row: int, column: int) -> QWidget:
-        scrollable_container = QScrollArea()
-        scrollable_widget = QWidget()
-        scrollable_layout = QVBoxLayout(scrollable_container)
-        scrollable_widget.setLayout(scrollable_layout)
-        scrollable_container.setWidget(scrollable_widget)
-        scrollable_container.setWidgetResizable(True)
-        self.main_layout.addWidget(scrollable_container, row, column)
-        return scrollable_widget
 
     def create_table(self, columns: list[str]) -> QTableWidget:
         table = QTableWidget()
