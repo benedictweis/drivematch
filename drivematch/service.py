@@ -1,16 +1,15 @@
 import uuid
 
-from analysis import CarsAnalyzer
-from progress import ProgressReporter
-from scraping import CarsScraper
-from car import GroupedCarsByManufacturerAndModel, ScoredCar
-from db import SearchInfo, SearchesRepository
+from drivematch.analysis import CarsAnalyzer
+from drivematch.scraping import CarsScraper
+from drivematch.car import GroupedCarsByManufacturerAndModel, ScoredCar
+from drivematch.db import SearchInfo, SearchesRepository
 
 
 def create_default_drivematch_service(db_path: str):
-    from db import SQLiteSearchesRepository
-    from scraping import MobileDeScraper
-    from analysis import CarsAnalyzer
+    from drivematch.db import SQLiteSearchesRepository
+    from drivematch.scraping import MobileDeScraper
+    from drivematch.analysis import CarsAnalyzer
 
     return DriveMatchService(
         SQLiteSearchesRepository(db_path),
@@ -45,8 +44,8 @@ class DriveMatchService():
         weight_mileage: float,
         weight_age: float,
         preferred_age: float,
-        filter_by_manufacturer: str,
-        filter_by_model: str,
+        filter_by_manufacturers: list[str],
+        filter_by_models: list[str],
     ) -> list[ScoredCar]:
         cars = self.searches_repository.get_cars_for_search(search_id)
         self.cars_analyzer.set_cars(cars)
@@ -56,8 +55,8 @@ class DriveMatchService():
             weight_mileage,
             weight_age,
             preferred_age,
-            filter_by_manufacturer,
-            filter_by_model,
+            filter_by_manufacturers,
+            filter_by_models,
         )
         return self.cars_analyzer.get_scored_cars()
 

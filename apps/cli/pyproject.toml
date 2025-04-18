@@ -1,17 +1,15 @@
 [project]
-name = "drivematch"
-version = "0.3.5"
+name = "drivematch-cli"
+version = "0.1.0"
 description = ""
 authors = [
     { name = "Benedict Weis", email = "47110382+benedictweis@users.noreply.github.com" },
 ]
 license = { text = "Apache 2.0" }
-readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "bs4 (>=0.0.2,<0.0.3)",
-    "selenium (>=4.31.0,<5.0.0)",
-    "pydantic (>=2.11.3,<3.0.0)",
+    "drivematch @ file:///Users/I569855/projects/drivematch",
+    "typer (>=0.15.2,<0.16.0)",
 ]
 
 

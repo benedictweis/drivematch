@@ -8,10 +8,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from abc import ABC, abstractmethod
 
-from rich.progress import Progress
-
-from car import Car
-from progress import ProgressReporter
+from drivematch.car import Car
 
 firefox_options = Options()
 firefox_options.add_argument("--window-size=1920,1080")
@@ -46,19 +43,21 @@ class MobileDeScraper(CarsScraper):
         driver.delete_all_cookies()
         driver.get(url)
         soups = []
-        nav_element = driver.find_element(By.CSS_SELECTOR, "nav[aria-label='Weitere Angebote']")
-        second_to_last_li = nav_element.find_elements(By.CSS_SELECTOR, "ul > li")[-2]
-        page_count = float(second_to_last_li.text.strip())
-        progress = Progress()
-        task = progress.add_task("Loading pages", total=page_count)
-        progress.start()
+        nav_element = driver.find_element(
+            By.CSS_SELECTOR, "nav[aria-label='Weitere Angebote']"
+        )
+        second_to_last_li = nav_element.find_elements(
+            By.CSS_SELECTOR, "ul > li"
+        )[-2]
+        _ = float(second_to_last_li.text.strip())
         time.sleep(random.uniform(1, 2))
-        consent_button = driver.find_element(By.CLASS_NAME, "mde-consent-accept-btn")
+        consent_button = driver.find_element(
+            By.CLASS_NAME, "mde-consent-accept-btn"
+        )
         consent_button.click()
         time.sleep(random.uniform(1, 2))
         while True:
             try:
-                progress.advance(task)
                 soups.append(BeautifulSoup(driver.page_source, "html.parser"))
                 next_page = driver.find_element(
                     By.CSS_SELECTOR, "button[aria-label='Weiter']"
@@ -68,12 +67,14 @@ class MobileDeScraper(CarsScraper):
             except Exception:
                 break
         driver.quit()
-        progress.stop()
         return soups
 
     def get_cars_from_soup(self, soup: BeautifulSoup) -> list[Car]:
         links = soup.select(
-            "article > section > div > div > a[href^='/fahrzeuge/details.html?']"
+            (
+                "article > section > div > div > "
+                "a[href^='/fahrzeuge/details.html?']"
+            )
         )
         cars = [self.parse_car_details(link) for link in links]
         return cars

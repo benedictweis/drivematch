@@ -2,9 +2,9 @@ import sqlite3
 
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
-
-from car import Car
 from datetime import datetime
+
+from drivematch.car import Car
 
 
 class SearchInfo(BaseModel):

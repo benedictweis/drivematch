@@ -5,7 +5,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from service import DriveMatchService, create_default_drivematch_service
+from drivematch.service import DriveMatchService
+from drivematch.service import create_default_drivematch_service
 
 
 class DriveMatch(QDialog):
@@ -176,13 +177,10 @@ class DriveMatch(QDialog):
                 model = self.grouped_cars_table.item(row, 2).text()
                 print(f"Selected Car - Manufacturer: {manufacturer}, Model: {model}")
                 selected_cars.append((manufacturer, model))
-        
-        filter_by_manufacturer = ""
-        filter_by_model = ""
-        
-        if len(selected_cars) > 0:
-            # If there are selected cars, filter by the first one
-            filter_by_manufacturer, filter_by_model = selected_cars[0]
+
+        # Filter by selected manufacturers and models
+        filter_by_manufacturers = [car[0] for car in selected_cars]
+        filter_by_models = [car[1] for car in selected_cars]
 
         # Invoke the scores function of the drive match service
         scored_cars = self.drive_match_service.get_scores(
@@ -192,8 +190,8 @@ class DriveMatch(QDialog):
             weight_mileage=self.mileage_weight.value(),
             weight_age=self.age_weight.value(),
             preferred_age=self.preferred_age.value(),
-            filter_by_manufacturer=filter_by_manufacturer,
-            filter_by_model=filter_by_model
+            filter_by_manufacturers=filter_by_manufacturers,
+            filter_by_models=filter_by_models
         )
 
         # Clear the scored cars table

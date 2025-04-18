@@ -2,8 +2,7 @@
 
 ## Features to come
 
-- [ ] Allow for multiple grouped cars to be selected
 - [ ] Improve gui look
+- [ ] API redesign
 - [ ] Show historical data
 - [ ] Parallel requests
-- [ ] API Redesign

@@ -1,7 +1,7 @@
 from typing import Callable
 from datetime import datetime
 
-from car import Car, GroupedCarsByManufacturerAndModel, ScoredCar
+from drivematch.car import Car, GroupedCarsByManufacturerAndModel, ScoredCar
 
 
 def group_by[T](
@@ -50,7 +50,9 @@ class CarsAnalyzer:
                 count=len(group),
                 average_price=sum(car.price for car in group) / len(group),
                 average_mileage=sum(car.mileage for car in group) / len(group),
-                average_horse_power=sum(car.horse_power for car in group) / len(group),
+                average_horse_power=(
+                    sum(car.horse_power for car in group) / len(group)
+                ),
                 average_age=average_age
             )
             grouped_cars.append(grouped_cars_entry)
@@ -64,16 +66,16 @@ class CarsAnalyzer:
         weight_mileage: float,
         weight_age: float,
         preferred_age: float,
-        filter_by_manufacturer: str,
-        filter_by_model: str
+        filter_by_manufacturers: list[str],
+        filter_by_models: list[str]
     ):
         self.weight_hp = weight_hp
         self.weight_price = weight_price
         self.weight_mileage = weight_mileage
         self.weight_age = weight_age
         self.preferred_age = preferred_age
-        self.filter_by_manufacturer = filter_by_manufacturer
-        self.filter_by_model = filter_by_model
+        self.filter_by_manufacturers = filter_by_manufacturers
+        self.filter_by_models = filter_by_models
 
     def get_scored_cars(self) -> list[ScoredCar]:
         if self.cars is None or len(self.cars) == 0:
@@ -97,16 +99,11 @@ class CarsAnalyzer:
             car=car,
             score=self.score(car)) for car in self.cars]
         scored_cars = sorted(scored_cars, key=lambda x: x.score, reverse=True)
-        if self.filter_by_manufacturer != '':
+        if len(self.filter_by_manufacturers) > 0:
             scored_cars = [
-                car for car in scored_cars
-                if car.car.manufacturer == self.filter_by_manufacturer
-            ]
-        if self.filter_by_model != '':
-            scored_cars = [
-                car for car in scored_cars
-                if car.car.model == self.filter_by_model
-            ]
+                scored_car for scored_car in scored_cars
+                if scored_car.car.manufacturer in self.filter_by_manufacturers
+                and scored_car.car.model in self.filter_by_models]
         return scored_cars
 
     def score(self, car: Car) -> float:
