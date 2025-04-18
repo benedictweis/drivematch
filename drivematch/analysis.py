@@ -76,6 +76,8 @@ class CarsAnalyzer:
         self.filter_by_model = filter_by_model
 
     def get_scored_cars(self) -> list[ScoredCar]:
+        if self.cars is None or len(self.cars) == 0:
+            return []
         self.min_hp = min(car.horse_power for car in self.cars)
         self.max_hp = max(car.horse_power for car in self.cars)
         self.min_price = min(car.price for car in self.cars)

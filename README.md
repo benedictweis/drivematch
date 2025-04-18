@@ -2,7 +2,7 @@
 
 ## Features to come
 
-- [ ] Migrate to Database for storing information
+- [ ] Allow for multiple grouped cars to be selected 
 - [ ] Show historical data
 - [ ] Parallel requests
 - [ ] API Redesign

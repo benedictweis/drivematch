@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import (
     QApplication, QDialog, QGridLayout, QLabel, QScrollArea, QWidget,
-    QVBoxLayout, QComboBox, QDoubleSpinBox
+    QVBoxLayout, QComboBox, QDoubleSpinBox, QTableWidget, QTableWidgetItem,
+    QCheckBox
 )
-from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
 
 from service import DriveMatchService, create_default_drivematch_service
@@ -19,8 +19,8 @@ class DriveMatch(QDialog):
     mileage_weight: QDoubleSpinBox
     age_weight: QDoubleSpinBox
     preferred_age: QDoubleSpinBox
-    scored_cars_container: QWidget
-    grouped_cars_container: QWidget
+    scored_cars_table: QTableWidget
+    grouped_cars_table: QTableWidget
 
     def __init__(self, drive_match_service: DriveMatchService, parent=None):
         super().__init__(parent)
@@ -33,8 +33,8 @@ class DriveMatch(QDialog):
 
         # Set column stretch to make the middle column twice as wide
         self.main_layout.setColumnStretch(0, 1)  # Filters column
-        self.main_layout.setColumnStretch(1, 2)  # Scored Cars column
-        self.main_layout.setColumnStretch(2, 1)  # Grouped Cars column
+        self.main_layout.setColumnStretch(1, 3)  # Scored Cars column
+        self.main_layout.setColumnStretch(2, 2)  # Grouped Cars column
 
         # Add titles to the columns
         self.main_layout.addWidget(QLabel("Filters"), 0, 0)
@@ -54,7 +54,8 @@ class DriveMatch(QDialog):
         # Date filter
         self.filters_layout.addWidget(QLabel("Date:"))
         self.date_dropdown = QComboBox()
-        self.search_dropdown.currentIndexChanged.connect(self.analyze_data)
+        self.date_dropdown.currentIndexChanged.connect(self.set_scored_cars)
+        self.date_dropdown.currentIndexChanged.connect(self.set_grouped_cars)
         self.filters_layout.addWidget(self.date_dropdown)
 
         # Weights section
@@ -81,8 +82,21 @@ class DriveMatch(QDialog):
         self.main_layout.addWidget(filters_widget, 1, 0)
 
         # Create scrollable containers for the middle and last columns
-        self.scored_cars_container = self.create_scrollable_container(1, 1)
-        self.grouped_cars_container = self.create_scrollable_container(1, 2)
+        scored_cars_container = self.create_scrollable_container(1, 1)
+        # Create a table to display scored cars
+        self.scored_cars_table = self.create_table([
+            "Manufacturer", "Model", "Price", "Mileage", "Horsepower",
+            "Fuel Type", "First Registration", "Details"
+        ])
+        scored_cars_container.layout().addWidget(self.scored_cars_table)
+
+        grouped_cars_container = self.create_scrollable_container(1, 2)
+        # Create a table to display grouped cars
+        self.grouped_cars_table = self.create_table([
+            "Selected", "Manufacturer", "Model", "Count", "Avg. Price", "Avg. Mileage",
+            "Avg. Horsepower", "Avg. Age"
+        ])
+        grouped_cars_container.layout().addWidget(self.grouped_cars_table)
 
         self.set_searches()
 
@@ -93,7 +107,7 @@ class DriveMatch(QDialog):
         spinbox.setSingleStep(step)
         spinbox.setDecimals(decimals)
         spinbox.setValue(default_value)
-        spinbox.valueChanged.connect(self.analyze_data)
+        spinbox.valueChanged.connect(self.set_scored_cars)
         self.filters_layout.addWidget(spinbox)
         return spinbox
 
@@ -106,6 +120,13 @@ class DriveMatch(QDialog):
         scrollable_container.setWidgetResizable(True)
         self.main_layout.addWidget(scrollable_container, row, column)
         return scrollable_widget
+
+    def create_table(self, columns: list[str]) -> QTableWidget:
+        table = QTableWidget()
+        table.setColumnCount(len(columns))
+        table.setHorizontalHeaderLabels(columns)
+        table.setEditTriggers(QTableWidget.NoEditTriggers)
+        return table
 
     def set_searches(self):
         self.search_dropdown.addItem("Select a search", None)  # Default item
@@ -136,65 +157,97 @@ class DriveMatch(QDialog):
                 self.date_dropdown.addItem(f"{search.date} ({search.amount_of_cars} cars)", search.id)
             self.date_dropdown.setEnabled(True)
 
-    def analyze_data(self):
+    def set_scored_cars(self):
         # Analyze data based on the selected date and weights
         selected_date_id = self.date_dropdown.currentData()
         if not selected_date_id:
             print("No valid date selected!")
             return
 
-        weights = {
-            "horsepower": self.horsepower_weight.value(),
-            "price": self.price_weight.value(),
-            "mileage": self.mileage_weight.value(),
-            "age": self.age_weight.value(),
-            "preferred_age": self.preferred_age.value(),
-        }
+        print(f"Scoring cars for search ID: {selected_date_id}")
 
-        print(f"Analyzing data for date ID: {selected_date_id} with weights: {weights}")
+        selected_cars = []
+ 
+        # Iterate through all rows in the grouped cars table
+        for row in range(self.grouped_cars_table.rowCount()):
+            checkbox = self.grouped_cars_table.cellWidget(row, 0)  # Get the checkbox widget
+            if checkbox and checkbox.isChecked():  # Check if the checkbox is selected
+                manufacturer = self.grouped_cars_table.item(row, 1).text()
+                model = self.grouped_cars_table.item(row, 2).text()
+                print(f"Selected Car - Manufacturer: {manufacturer}, Model: {model}")
+                selected_cars.append((manufacturer, model))
+        
+        filter_by_manufacturer = ""
+        filter_by_model = ""
+        
+        if len(selected_cars) > 0:
+            # If there are selected cars, filter by the first one
+            filter_by_manufacturer, filter_by_model = selected_cars[0]
 
         # Invoke the scores function of the drive match service
         scored_cars = self.drive_match_service.get_scores(
             search_id=selected_date_id,
-            weight_horsepower=weights["horsepower"],
-            weight_price=weights["price"],
-            weight_mileage=weights["mileage"],
-            weight_age=weights["age"],
-            preferred_age=weights["preferred_age"],
-            filter_by_manufacturer="",
-            filter_by_model=""
+            weight_horsepower=self.horsepower_weight.value(),
+            weight_price=self.price_weight.value(),
+            weight_mileage=self.mileage_weight.value(),
+            weight_age=self.age_weight.value(),
+            preferred_age=self.preferred_age.value(),
+            filter_by_manufacturer=filter_by_manufacturer,
+            filter_by_model=filter_by_model
         )
 
-        # Clear the scored cars container
-        for i in reversed(range(self.scored_cars_container.layout().count())):
-            widget_to_remove = self.scored_cars_container.layout().itemAt(i).widget()
-            self.scored_cars_container.layout().removeWidget(widget_to_remove)
-            widget_to_remove.deleteLater()
+        # Clear the scored cars table
+        self.scored_cars_table.setRowCount(0)
+        self.scored_cars_table.setRowCount(len(scored_cars))
 
-        # Display the scored cars in the scored_cars_container
-        for scored_car in scored_cars:
+        # Populate the table with scored car data
+        for row, scored_car in enumerate(scored_cars):
             car = scored_car.car
+            self.scored_cars_table.setItem(row, 0, QTableWidgetItem(car.manufacturer))
+            self.scored_cars_table.setItem(row, 1, QTableWidgetItem(car.model))
+            self.scored_cars_table.setItem(row, 2, QTableWidgetItem(f"{car.price:,}".replace(",", ".") + " €"))
+            self.scored_cars_table.setItem(row, 3, QTableWidgetItem(f"{car.mileage:,}".replace(",", ".") + "km"))
+            self.scored_cars_table.setItem(row, 4, QTableWidgetItem(f"{car.horse_power} HP"))
+            self.scored_cars_table.setItem(row, 5, QTableWidgetItem(car.fuel_type))
+            self.scored_cars_table.setItem(row, 6, QTableWidgetItem(car.first_registration.strftime('%Y-%m-%d')))
+            link_label = QLabel(f'<a href="{car.details_url}">Link</a>')
+            link_label.setOpenExternalLinks(True)  # Enable clickable links
+            self.scored_cars_table.setCellWidget(row, 7, link_label)
 
-            # Create a widget for each car
-            car_widget = QWidget()
-            car_layout = QVBoxLayout(car_widget)
+        self.scored_cars_table.resizeColumnsToContents()
 
-            # Add car details
-            car_details = f"""
-            <b>{car.manufacturer} {car.model}</b><br>
-            {car.description}<br>
-            Price: ${car.price:,}<br>
-            Mileage: {car.mileage:,} km<br>
-            Horsepower: {car.horse_power} HP<br>
-            Fuel Type: {car.fuel_type}<br>
-            First Registration: {car.first_registration.strftime('%Y-%m-%d')}<br>
-            <a href="{car.details_url}">More Details</a>
-            """
-            car_details_label = QLabel(car_details)
-            car_details_label.setOpenExternalLinks(True)
-            car_layout.addWidget(car_details_label)
+    def set_grouped_cars(self):
+        # Show grouped cars data based on the selected search and date
+        selected_date_id = self.date_dropdown.currentData()
+        if not selected_date_id:
+            print("No valid date selected!")
+            return
 
-            self.scored_cars_container.layout().addWidget(car_widget)
+        print(f"Grouping cars for search ID: {selected_date_id}")
+
+        # Invoke the group function of the drive match service
+        grouped_cars = self.drive_match_service.get_groups(selected_date_id)
+
+        # Clear the scored cars table
+        self.grouped_cars_table.setRowCount(0)
+        self.grouped_cars_table.setRowCount(len(grouped_cars))
+
+        # Populate the table with grouped car data
+        for row, grouped_car in enumerate(grouped_cars):
+            # Add a checkbox for selection
+            checkbox = QCheckBox()
+            checkbox.setCheckState(Qt.Unchecked)
+            checkbox.stateChanged.connect(self.set_scored_cars)
+            self.grouped_cars_table.setCellWidget(row, 0, checkbox)
+            self.grouped_cars_table.setItem(row, 1, QTableWidgetItem(grouped_car.manufacturer))
+            self.grouped_cars_table.setItem(row, 2, QTableWidgetItem(grouped_car.model))
+            self.grouped_cars_table.setItem(row, 3, QTableWidgetItem(f"{grouped_car.count}"))
+            self.grouped_cars_table.setItem(row, 4, QTableWidgetItem(f"{round(grouped_car.average_price):,}".replace(",", ".") + " €"))
+            self.grouped_cars_table.setItem(row, 5, QTableWidgetItem(f"{round(grouped_car.average_mileage):,}".replace(",", ".") + " km"))
+            self.grouped_cars_table.setItem(row, 6, QTableWidgetItem(f"{round(grouped_car.average_horse_power):,}".replace(",", ".") + " HP"))
+            self.grouped_cars_table.setItem(row, 7, QTableWidgetItem(f"{round(grouped_car.average_age):,}".replace(",", ".") + " days"))
+
+        self.grouped_cars_table.resizeColumnsToContents()
 
 
 if __name__ == "__main__":
