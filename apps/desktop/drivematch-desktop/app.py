@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
-    QApplication, QDialog, QGridLayout, QLabel, QScrollArea, QWidget,
+    QApplication, QDialog, QGridLayout, QLabel, QWidget,
     QVBoxLayout, QComboBox, QDoubleSpinBox, QTableWidget, QTableWidgetItem,
-    QCheckBox, QSplitter
+    QCheckBox, QSplitter, QSizePolicy, QLineEdit, QPushButton
 )
 from PySide6.QtCore import Qt
 
@@ -12,8 +12,10 @@ from drivematch.service import create_default_drivematch_service
 class DriveMatch(QDialog):
     drive_match_service: DriveMatchService
     main_layout: QGridLayout
-    splitter: QSplitter
-    filters_layout: QVBoxLayout
+    name_textfield: QLineEdit
+    url_textfield: QLineEdit
+    table_splitter: QSplitter
+    weights_layout: QGridLayout
     search_dropdown: QComboBox
     date_dropdown: QComboBox
     horsepower_weight: QDoubleSpinBox
@@ -38,26 +40,46 @@ class DriveMatch(QDialog):
         self.main_layout.setColumnStretch(1, 4)  # Scored Cars column
 
         # Create filters section
-        self.filters_layout = QVBoxLayout()
+        filters_layout = QVBoxLayout()
         
-        self.filters_layout.addWidget(QLabel("Filters"))
+        filters_layout.addWidget(QLabel("Scraping"))
+        
+        filters_layout.addWidget(QLabel("Name:"))
+        
+        self.name_textfield = QLineEdit()
+        self.name_textfield.setPlaceholderText("Enter a name")
+        filters_layout.addWidget(self.name_textfield)
+        
+        filters_layout.addWidget(QLabel("URL:"))
+        
+        self.url_textfield = QLineEdit()
+        self.url_textfield.setPlaceholderText("Enter a mobile.de URL")
+        filters_layout.addWidget(self.url_textfield)
+        
+        scrape_button = QPushButton("Scrape")
+        scrape_button.clicked.connect(self.scrape)
+        filters_layout.addWidget(scrape_button)
+
+        filters_layout.addWidget(QLabel("Settings"))
 
         # Search filter
-        self.filters_layout.addWidget(QLabel("Search:"))
+        filters_layout.addWidget(QLabel("Search:"))
         self.search_dropdown = QComboBox()
         # Connect the search dropdown selection change to update dates
         self.search_dropdown.currentIndexChanged.connect(self.update_dates)
-        self.filters_layout.addWidget(self.search_dropdown)
+        filters_layout.addWidget(self.search_dropdown)
 
         # Date filter
-        self.filters_layout.addWidget(QLabel("Date:"))
+        filters_layout.addWidget(QLabel("Date:"))
         self.date_dropdown = QComboBox()
         self.date_dropdown.currentIndexChanged.connect(self.set_scored_cars)
         self.date_dropdown.currentIndexChanged.connect(self.set_grouped_cars)
-        self.filters_layout.addWidget(self.date_dropdown)
+        filters_layout.addWidget(self.date_dropdown)
 
         # Weights section
-        self.filters_layout.addWidget(QLabel("Weights:"))
+        filters_layout.addWidget(QLabel("Weights"))
+        
+        self.weights_layout = QGridLayout()
 
         # Horsepower weight
         self.horsepower_weight = self.create_weight_spinbox("Horsepower:", -100.0, 100.0, 0.1, 1, 1)
@@ -73,15 +95,21 @@ class DriveMatch(QDialog):
 
         # Preferred age
         self.preferred_age = self.create_weight_spinbox("Preferred Age:", 0, 17800.0, 1, 0, 0)
+        
+        weights_widget = QWidget()
+        weights_widget.setLayout(self.weights_layout)
+        filters_layout.addWidget(weights_widget)
 
-        # Add filters section to the main layout
+        # Add filters section to the main layout and align it to the top
         filters_widget = QWidget()
-        filters_widget.setLayout(self.filters_layout)
+        filters_widget.setLayout(filters_layout)
+        filters_widget.setSizePolicy(filters_widget.sizePolicy().horizontalPolicy(), QSizePolicy.Fixed)
         self.main_layout.addWidget(filters_widget, 0, 0)
+        self.main_layout.setAlignment(filters_widget, Qt.AlignTop)
 
         # Create a splitter for Scored Cars and Grouped Cars
-        self.splitter = QSplitter(Qt.Horizontal)
-        self.main_layout.addWidget(self.splitter, 0, 1)
+        self.table_splitter = QSplitter(Qt.Vertical)
+        self.main_layout.addWidget(self.table_splitter, 0, 1)
 
         scored_cars_layout = QVBoxLayout()
         scored_cars_layout.addWidget(QLabel("Scored Cars"))
@@ -93,7 +121,7 @@ class DriveMatch(QDialog):
         scored_cars_layout.addWidget(self.scored_cars_table)
         scored_cars_widget = QWidget()
         scored_cars_widget.setLayout(scored_cars_layout)
-        self.splitter.addWidget(scored_cars_widget)
+        self.table_splitter.addWidget(scored_cars_widget)
 
         grouped_cars_layout = QVBoxLayout()
         grouped_cars_layout.addWidget(QLabel("Grouped Cars"))
@@ -105,19 +133,19 @@ class DriveMatch(QDialog):
         grouped_cars_layout.addWidget(self.grouped_cars_table)
         grouped_cars_widget = QWidget()
         grouped_cars_widget.setLayout(grouped_cars_layout)
-        self.splitter.addWidget(grouped_cars_widget)
+        self.table_splitter.addWidget(grouped_cars_widget)
 
         self.set_searches()
 
     def create_weight_spinbox(self, label, min_value, max_value, step, decimals, default_value) -> QDoubleSpinBox:
-        self.filters_layout.addWidget(QLabel(label))
+        self.weights_layout.addWidget(QLabel(label), self.weights_layout.rowCount(), 0)
         spinbox = QDoubleSpinBox()
         spinbox.setRange(min_value, max_value)
         spinbox.setSingleStep(step)
         spinbox.setDecimals(decimals)
         spinbox.setValue(default_value)
         spinbox.valueChanged.connect(self.set_scored_cars)
-        self.filters_layout.addWidget(spinbox)
+        self.weights_layout.addWidget(spinbox, self.weights_layout.rowCount() - 1, 1)
         return spinbox
 
     def create_table(self, columns: list[str]) -> QTableWidget:
@@ -127,7 +155,29 @@ class DriveMatch(QDialog):
         table.setEditTriggers(QTableWidget.NoEditTriggers)
         return table
 
+    def scrape(self):
+        # Get the name and URL from the text fields
+        name = self.name_textfield.text()
+        url = self.url_textfield.text()
+
+        # Validate inputs
+        if not name or not url:
+            print("Please enter a valid name and URL.")
+            return
+
+        # Invoke the scrape function of the drive match service
+        self.drive_match_service.scrape(name, url)
+
+        # Clear the text fields after scraping
+        self.name_textfield.clear()
+        self.url_textfield.clear()
+
+        # Update the searches and dates
+        self.set_searches()
+        self.update_dates()
+
     def set_searches(self):
+        self.search_dropdown.clear()
         self.search_dropdown.addItem("Select a search", None)  # Default item
         searches = self.drive_match_service.get_searches()
         unique_searches = {search.name: search for search in searches}.values()
