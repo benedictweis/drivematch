@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import (
     QApplication, QDialog, QGridLayout, QLabel, QWidget,
     QVBoxLayout, QComboBox, QDoubleSpinBox, QTableWidget, QTableWidgetItem,
-    QCheckBox, QSplitter, QSizePolicy, QLineEdit, QPushButton
+    QCheckBox, QSplitter, QSizePolicy, QLineEdit, QPushButton,
+    QTabWidget
 )
 from PySide6.QtCore import Qt
 
@@ -33,17 +34,64 @@ class DriveMatch(QDialog):
         self.setWindowTitle("Drive Match")
         self.setGeometry(200, 200, 1000, 600)
 
-        main_layout = QGridLayout(self)
+        analyze_layout = QVBoxLayout(self)
 
-        main_layout.setColumnStretch(0, 1)
-        main_layout.setColumnStretch(1, 4)
+        tab_layout = QVBoxLayout()
+        tab_widget = QTabWidget()
+
+        scrape_widget = self.create_scrape_widget()
+        tab_widget.addTab(scrape_widget, "Scrape")
+
+        analyze_widget = self.create_analyze_widget()
+        tab_widget.addTab(analyze_widget, "Analyze")
+
+        tab_layout.addWidget(tab_widget)
+        analyze_layout.addLayout(tab_layout)
+
+        self.set_searches()
+
+    def create_scrape_widget(self) -> QWidget:
+        scrape_layout = QVBoxLayout()
+
+        scrape_layout.addWidget(QLabel("Name:"))
+
+        self.name_textfield = QLineEdit()
+        self.name_textfield.setPlaceholderText("Enter a name")
+        scrape_layout.addWidget(self.name_textfield)
+
+        scrape_layout.addWidget(QLabel("URL:"))
+
+        self.url_textfield = QLineEdit()
+        self.url_textfield.setPlaceholderText("Enter a mobile.de URL")
+        scrape_layout.addWidget(self.url_textfield)
+
+        scrape_button = QPushButton("Scrape")
+        scrape_button.clicked.connect(self.scrape)
+        scrape_layout.addWidget(scrape_button)
+
+        scrape_widget = QWidget()
+        scrape_widget.setLayout(scrape_layout)
+        scrape_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        container_layout = QVBoxLayout()
+        container_layout.addWidget(scrape_widget, alignment=Qt.AlignCenter)
+
+        container_widget = QWidget()
+        container_widget.setLayout(container_layout)
+        return container_widget
+
+    def create_analyze_widget(self) -> QWidget:
+        analyze_layout = QGridLayout()
+
+        analyze_layout.setColumnStretch(0, 1)
+        analyze_layout.setColumnStretch(1, 4)
 
         filters_widget = self.create_filters_widget()
-        main_layout.addWidget(filters_widget, 0, 0)
-        main_layout.setAlignment(filters_widget, Qt.AlignTop)
+        analyze_layout.addWidget(filters_widget, 0, 0)
+        analyze_layout.setAlignment(filters_widget, Qt.AlignTop)
 
         table_splitter = QSplitter(Qt.Vertical)
-        main_layout.addWidget(table_splitter, 0, 1)
+        analyze_layout.addWidget(table_splitter, 0, 1)
 
         self.scored_cars_table, scored_cars_widget = self.create_table(
             "Scored Cars", [
@@ -59,28 +107,12 @@ class DriveMatch(QDialog):
             ])
         table_splitter.addWidget(grouped_cars_widget)
 
-        self.set_searches()
+        analyze_widget = QWidget()
+        analyze_widget.setLayout(analyze_layout)
+        return analyze_widget
 
     def create_filters_widget(self) -> QWidget:
         filters_layout = QVBoxLayout()
-
-        filters_layout.addWidget(QLabel("Scraping"))
-
-        filters_layout.addWidget(QLabel("Name:"))
-
-        self.name_textfield = QLineEdit()
-        self.name_textfield.setPlaceholderText("Enter a name")
-        filters_layout.addWidget(self.name_textfield)
-
-        filters_layout.addWidget(QLabel("URL:"))
-
-        self.url_textfield = QLineEdit()
-        self.url_textfield.setPlaceholderText("Enter a mobile.de URL")
-        filters_layout.addWidget(self.url_textfield)
-
-        scrape_button = QPushButton("Scrape")
-        scrape_button.clicked.connect(self.scrape)
-        filters_layout.addWidget(scrape_button)
 
         filters_layout.addWidget(QLabel("Settings"))
 

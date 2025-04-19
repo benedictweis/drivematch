@@ -2,5 +2,4 @@
 
 ## Features to come
 
-- [ ] [desktop] tabs
-- [ ] [desktop] loss of value chart for groups
+- [ ] \[desktop\] loss of value chart for groups
