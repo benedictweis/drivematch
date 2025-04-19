@@ -33,3 +33,4 @@ class GroupedCarsByManufacturerAndModel(BaseModel):
     average_horse_power: float
     average_age: float
     average_advertisement_age: float
+    cars: list[Car]

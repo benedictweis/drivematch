@@ -58,6 +58,7 @@ class CarsAnalyzer:
                 ),
                 average_age=average_age,
                 average_advertisement_age=average_advertisement_age,
+                cars=group
             )
             grouped_cars.append(grouped_cars_entry)
         grouped_cars.sort(key=lambda x: x.count, reverse=True)

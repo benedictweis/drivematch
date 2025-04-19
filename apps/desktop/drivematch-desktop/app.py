@@ -5,17 +5,15 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from drivematch.service import DriveMatchService
-from drivematch.service import create_default_drivematch_service
+from drivematch.service import (
+    DriveMatchService, create_default_drivematch_service
+)
 
 
 class DriveMatch(QDialog):
     drive_match_service: DriveMatchService
-    main_layout: QGridLayout
     name_textfield: QLineEdit
     url_textfield: QLineEdit
-    table_splitter: QSplitter
-    weights_layout: QGridLayout
     search_dropdown: QComboBox
     date_dropdown: QComboBox
     horsepower_weight: QDoubleSpinBox
@@ -35,133 +33,114 @@ class DriveMatch(QDialog):
         self.setWindowTitle("Drive Match")
         self.setGeometry(200, 200, 1000, 600)
 
-        self.main_layout = QGridLayout(self)
+        main_layout = QGridLayout(self)
 
-        # Set column stretch to make the middle column twice as wide
-        self.main_layout.setColumnStretch(0, 1)  # Filters column
-        self.main_layout.setColumnStretch(1, 4)  # Scored Cars column
+        main_layout.setColumnStretch(0, 1)
+        main_layout.setColumnStretch(1, 4)
 
-        # Create filters section
+        filters_widget = self.create_filters_widget()
+        main_layout.addWidget(filters_widget, 0, 0)
+        main_layout.setAlignment(filters_widget, Qt.AlignTop)
+
+        table_splitter = QSplitter(Qt.Vertical)
+        main_layout.addWidget(table_splitter, 0, 1)
+
+        self.scored_cars_table, scored_cars_widget = self.create_table(
+            "Scored Cars", [
+                "Manufacturer", "Model", "Price", "Mileage", "Horsepower",
+                "Fuel Type", "First Reg.", "Adv. Since", "Seller", "Details"
+            ])
+        table_splitter.addWidget(scored_cars_widget)
+
+        self.grouped_cars_table, grouped_cars_widget = self.create_table(
+            "Grouped Cars", [
+                "Selected", "Manufacturer", "Model", "Count", "Avg. Price",
+                "Avg. Mileage", "Avg. Horsepower", "Avg. Age", "Avg. Adv. Age"
+            ])
+        table_splitter.addWidget(grouped_cars_widget)
+
+        self.set_searches()
+
+    def create_filters_widget(self) -> QWidget:
         filters_layout = QVBoxLayout()
-        
+
         filters_layout.addWidget(QLabel("Scraping"))
-        
+
         filters_layout.addWidget(QLabel("Name:"))
-        
+
         self.name_textfield = QLineEdit()
         self.name_textfield.setPlaceholderText("Enter a name")
         filters_layout.addWidget(self.name_textfield)
-        
+
         filters_layout.addWidget(QLabel("URL:"))
-        
+
         self.url_textfield = QLineEdit()
         self.url_textfield.setPlaceholderText("Enter a mobile.de URL")
         filters_layout.addWidget(self.url_textfield)
-        
+
         scrape_button = QPushButton("Scrape")
         scrape_button.clicked.connect(self.scrape)
         filters_layout.addWidget(scrape_button)
 
         filters_layout.addWidget(QLabel("Settings"))
 
-        # Search filter
         filters_layout.addWidget(QLabel("Search:"))
         self.search_dropdown = QComboBox()
-        # Connect the search dropdown selection change to update dates
         self.search_dropdown.currentIndexChanged.connect(self.update_dates)
         filters_layout.addWidget(self.search_dropdown)
 
-        # Date filter
         filters_layout.addWidget(QLabel("Date:"))
         self.date_dropdown = QComboBox()
         self.date_dropdown.currentIndexChanged.connect(self.set_scored_cars)
         self.date_dropdown.currentIndexChanged.connect(self.set_grouped_cars)
         filters_layout.addWidget(self.date_dropdown)
 
-        # Weights section
         filters_layout.addWidget(QLabel("Weights"))
-        
-        self.weights_layout = QGridLayout()
 
-        # Horsepower weight
-        self.horsepower_weight = self.create_weight_spinbox("Horsepower:", -100.0, 100.0, 0.1, 1, 1)
+        weights_layout = QGridLayout()
 
-        # Price weight
-        self.price_weight = self.create_weight_spinbox("Price:", -100.0, 100.0, 0.1, 1, -1)
-
-        # Mileage weight
-        self.mileage_weight = self.create_weight_spinbox("Mileage:", -100.0, 100.0, 0.1, 1, -1)
-
-        # Age weight
-        self.age_weight = self.create_weight_spinbox("Age:", -100.0, 100.0, 0.1, 1, -1)
-
-        # Preferred age
-        self.preferred_age = self.create_weight_spinbox("Preferred Age:", 0, 17800.0, 1, 0, 0)
-
-        # Advertisement age weight
-        self.advertisement_age_weight = self.create_weight_spinbox("Advertisement Age:", -100.0, 100.0, 0.1, 1, -0.5)
-
-        # Preferred advertisement age
-        self.preferred_advertisement_age = self.create_weight_spinbox("Preferred Advertisement Age:", 0, 17800.0, 1, 0, 0)
+        self.horsepower_weight = self.create_weight_spinbox(weights_layout, "Horsepower:", -100.0, 100.0, 0.1, 1, 1)
+        self.price_weight = self.create_weight_spinbox(weights_layout, "Price:", -100.0, 100.0, 0.1, 1, -1)
+        self.mileage_weight = self.create_weight_spinbox(weights_layout, "Mileage:", -100.0, 100.0, 0.1, 1, -1)
+        self.age_weight = self.create_weight_spinbox(weights_layout, "Age:", -100.0, 100.0, 0.1, 1, -1)
+        self.preferred_age = self.create_weight_spinbox(weights_layout, "Preferred Age:", 0, 17800.0, 1, 0, 0)
+        self.advertisement_age_weight = self.create_weight_spinbox(weights_layout, "Advertisement Age:", -100.0, 100.0, 0.1, 1, -0.5)
+        self.preferred_advertisement_age = self.create_weight_spinbox(weights_layout, "Preferred Advertisement Age:", 0, 17800.0, 1, 0, 0)
 
         weights_widget = QWidget()
-        weights_widget.setLayout(self.weights_layout)
+        weights_widget.setLayout(weights_layout)
         filters_layout.addWidget(weights_widget)
 
-        # Add filters section to the main layout and align it to the top
         filters_widget = QWidget()
         filters_widget.setLayout(filters_layout)
         filters_widget.setSizePolicy(filters_widget.sizePolicy().horizontalPolicy(), QSizePolicy.Fixed)
-        self.main_layout.addWidget(filters_widget, 0, 0)
-        self.main_layout.setAlignment(filters_widget, Qt.AlignTop)
 
-        # Create a splitter for Scored Cars and Grouped Cars
-        self.table_splitter = QSplitter(Qt.Vertical)
-        self.main_layout.addWidget(self.table_splitter, 0, 1)
+        return filters_widget
 
-        scored_cars_layout = QVBoxLayout()
-        scored_cars_layout.addWidget(QLabel("Scored Cars"))
-        # Create a table to display scored cars
-        self.scored_cars_table = self.create_table([
-            "Manufacturer", "Model", "Price", "Mileage", "Horsepower",
-            "Fuel Type", "First Reg.", "Adv. Since", "Seller", "Details"
-        ])
-        scored_cars_layout.addWidget(self.scored_cars_table)
-        scored_cars_widget = QWidget()
-        scored_cars_widget.setLayout(scored_cars_layout)
-        self.table_splitter.addWidget(scored_cars_widget)
-
-        grouped_cars_layout = QVBoxLayout()
-        grouped_cars_layout.addWidget(QLabel("Grouped Cars"))
-        # Create a table to display grouped cars
-        self.grouped_cars_table = self.create_table([
-            "Selected", "Manufacturer", "Model", "Count", "Avg. Price", "Avg. Mileage",
-            "Avg. Horsepower", "Avg. Age", "Avg. Adv. Age"
-        ])
-        grouped_cars_layout.addWidget(self.grouped_cars_table)
-        grouped_cars_widget = QWidget()
-        grouped_cars_widget.setLayout(grouped_cars_layout)
-        self.table_splitter.addWidget(grouped_cars_widget)
-
-        self.set_searches()
-
-    def create_weight_spinbox(self, label, min_value, max_value, step, decimals, default_value) -> QDoubleSpinBox:
-        self.weights_layout.addWidget(QLabel(label), self.weights_layout.rowCount(), 0)
+    def create_weight_spinbox(self, parent: QGridLayout, label, min_value, max_value, step, decimals, default_value) -> QDoubleSpinBox:
+        parent.addWidget(QLabel(label), parent.rowCount(), 0)
         spinbox = QDoubleSpinBox()
         spinbox.setRange(min_value, max_value)
         spinbox.setSingleStep(step)
         spinbox.setDecimals(decimals)
         spinbox.setValue(default_value)
         spinbox.valueChanged.connect(self.set_scored_cars)
-        self.weights_layout.addWidget(spinbox, self.weights_layout.rowCount() - 1, 1)
+        parent.addWidget(spinbox, parent.rowCount() - 1, 1)
         return spinbox
 
-    def create_table(self, columns: list[str]) -> QTableWidget:
+    def create_table(self, label: str, columns: list[str]) -> tuple[QTableWidget, QWidget]:
+        table_layout = QVBoxLayout()
+        table_layout.addWidget(QLabel(label))
+
         table = QTableWidget()
         table.setColumnCount(len(columns))
         table.setHorizontalHeaderLabels(columns)
         table.setEditTriggers(QTableWidget.NoEditTriggers)
-        return table
+
+        table_layout.addWidget(table)
+        table_widget = QWidget()
+        table_widget.setLayout(table_layout)
+        return table, table_widget
 
     def scrape(self):
         # Get the name and URL from the text fields
@@ -224,7 +203,7 @@ class DriveMatch(QDialog):
         print(f"Scoring cars for search ID: {selected_date_id}")
 
         selected_cars = []
- 
+
         # Iterate through all rows in the grouped cars table
         for row in range(self.grouped_cars_table.rowCount()):
             checkbox = self.grouped_cars_table.cellWidget(row, 0)  # Get the checkbox widget

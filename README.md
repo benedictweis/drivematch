@@ -2,4 +2,5 @@
 
 ## Features to come
 
-- [ ] API redesign
+- [ ] [desktop] tabs
+- [ ] [desktop] loss of value chart for groups
