@@ -23,6 +23,8 @@ class DriveMatch(QDialog):
     mileage_weight: QDoubleSpinBox
     age_weight: QDoubleSpinBox
     preferred_age: QDoubleSpinBox
+    advertisement_age_weight: QDoubleSpinBox
+    preferred_advertisement_age: QDoubleSpinBox
     scored_cars_table: QTableWidget
     grouped_cars_table: QTableWidget
 
@@ -95,7 +97,13 @@ class DriveMatch(QDialog):
 
         # Preferred age
         self.preferred_age = self.create_weight_spinbox("Preferred Age:", 0, 17800.0, 1, 0, 0)
-        
+
+        # Advertisement age weight
+        self.advertisement_age_weight = self.create_weight_spinbox("Advertisement Age:", -100.0, 100.0, 0.1, 1, -0.5)
+
+        # Preferred advertisement age
+        self.preferred_advertisement_age = self.create_weight_spinbox("Preferred Advertisement Age:", 0, 17800.0, 1, 0, 0)
+
         weights_widget = QWidget()
         weights_widget.setLayout(self.weights_layout)
         filters_layout.addWidget(weights_widget)
@@ -116,7 +124,7 @@ class DriveMatch(QDialog):
         # Create a table to display scored cars
         self.scored_cars_table = self.create_table([
             "Manufacturer", "Model", "Price", "Mileage", "Horsepower",
-            "Fuel Type", "First Registration", "Details"
+            "Fuel Type", "First Reg.", "Adv. Since", "Seller", "Details"
         ])
         scored_cars_layout.addWidget(self.scored_cars_table)
         scored_cars_widget = QWidget()
@@ -128,7 +136,7 @@ class DriveMatch(QDialog):
         # Create a table to display grouped cars
         self.grouped_cars_table = self.create_table([
             "Selected", "Manufacturer", "Model", "Count", "Avg. Price", "Avg. Mileage",
-            "Avg. Horsepower", "Avg. Age"
+            "Avg. Horsepower", "Avg. Age", "Avg. Adv. Age"
         ])
         grouped_cars_layout.addWidget(self.grouped_cars_table)
         grouped_cars_widget = QWidget()
@@ -238,6 +246,8 @@ class DriveMatch(QDialog):
             weight_mileage=self.mileage_weight.value(),
             weight_age=self.age_weight.value(),
             preferred_age=self.preferred_age.value(),
+            weight_advertisement_age=self.advertisement_age_weight.value(),
+            preferred_advertisement_age=self.preferred_advertisement_age.value(),
             filter_by_manufacturers=filter_by_manufacturers,
             filter_by_models=filter_by_models
         )
@@ -256,9 +266,11 @@ class DriveMatch(QDialog):
             self.scored_cars_table.setItem(row, 4, QTableWidgetItem(f"{car.horse_power} HP"))
             self.scored_cars_table.setItem(row, 5, QTableWidgetItem(car.fuel_type))
             self.scored_cars_table.setItem(row, 6, QTableWidgetItem(car.first_registration.strftime('%Y-%m-%d')))
+            self.scored_cars_table.setItem(row, 7, QTableWidgetItem(car.advertised_since.strftime('%Y-%m-%d')))
+            self.scored_cars_table.setItem(row, 8, QTableWidgetItem("Private" if car.private_seller else "Dealer"))
             link_label = QLabel(f'<a href="{car.details_url}">Link</a>')
             link_label.setOpenExternalLinks(True)  # Enable clickable links
-            self.scored_cars_table.setCellWidget(row, 7, link_label)
+            self.scored_cars_table.setCellWidget(row, 9, link_label)
 
         self.scored_cars_table.resizeColumnsToContents()
 
@@ -292,6 +304,7 @@ class DriveMatch(QDialog):
             self.grouped_cars_table.setItem(row, 5, QTableWidgetItem(f"{round(grouped_car.average_mileage):,}".replace(",", ".") + " km"))
             self.grouped_cars_table.setItem(row, 6, QTableWidgetItem(f"{round(grouped_car.average_horse_power):,}".replace(",", ".") + " HP"))
             self.grouped_cars_table.setItem(row, 7, QTableWidgetItem(f"{round(grouped_car.average_age):,}".replace(",", ".") + " days"))
+            self.grouped_cars_table.setItem(row, 8, QTableWidgetItem(f"{round(grouped_car.average_advertisement_age):,}".replace(",", ".") + " days"))
 
         self.grouped_cars_table.resizeColumnsToContents()
 

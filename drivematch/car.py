@@ -13,6 +13,8 @@ class Car(BaseModel):
     mileage: int
     horse_power: int
     fuel_type: str
+    advertised_since: datetime
+    private_seller: bool
     details_url: str
     image_url: str
 
@@ -30,3 +32,4 @@ class GroupedCarsByManufacturerAndModel(BaseModel):
     average_mileage: float
     average_horse_power: float
     average_age: float
+    average_advertisement_age: float

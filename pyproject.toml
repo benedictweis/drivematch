@@ -1,6 +1,6 @@
 [project]
 name = "drivematch"
-version = "0.3.5"
+version = "0.4.2"
 description = ""
 authors = [
     { name = "Benedict Weis", email = "47110382+benedictweis@users.noreply.github.com" },

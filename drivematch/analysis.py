@@ -44,6 +44,9 @@ class CarsAnalyzer:
             average_age = sum(
                 (datetime.now() - car.first_registration).days for car in group
             ) / len(group)
+            average_advertisement_age = sum(
+                (datetime.now() - car.advertised_since).days for car in group
+            ) / len(group)
             grouped_cars_entry = GroupedCarsByManufacturerAndModel(
                 manufacturer=group[0].manufacturer,
                 model=group[0].model,
@@ -53,7 +56,8 @@ class CarsAnalyzer:
                 average_horse_power=(
                     sum(car.horse_power for car in group) / len(group)
                 ),
-                average_age=average_age
+                average_age=average_age,
+                average_advertisement_age=average_advertisement_age,
             )
             grouped_cars.append(grouped_cars_entry)
         grouped_cars.sort(key=lambda x: x.count, reverse=True)
@@ -66,6 +70,8 @@ class CarsAnalyzer:
         weight_mileage: float,
         weight_age: float,
         preferred_age: float,
+        weight_advertisement_age: float,
+        preferred_advertisement_age: float,
         filter_by_manufacturers: list[str],
         filter_by_models: list[str]
     ):
@@ -74,6 +80,8 @@ class CarsAnalyzer:
         self.weight_mileage = weight_mileage
         self.weight_age = weight_age
         self.preferred_age = preferred_age
+        self.weight_advertisement_age = weight_advertisement_age
+        self.preferred_advertisement_age = preferred_advertisement_age
         self.filter_by_manufacturers = filter_by_manufacturers
         self.filter_by_models = filter_by_models
 
@@ -94,6 +102,14 @@ class CarsAnalyzer:
             (datetime.now() - car.first_registration).days
             for car in self.cars
         )
+        self.min_advertisement_age = min(
+            (datetime.now() - car.advertised_since).days
+            for car in self.cars
+        )
+        self.max_advertisement_age = max(
+            (datetime.now() - car.advertised_since).days
+            for car in self.cars
+        )
 
         scored_cars = [ScoredCar(
             car=car,
@@ -109,6 +125,13 @@ class CarsAnalyzer:
     def score(self, car: Car) -> float:
         age = (datetime.now() - car.first_registration).days
         age = abs(age - self.preferred_age)
+        
+        advertisement_age = (
+            datetime.now() - car.advertised_since
+        ).days
+        advertisement_age = abs(
+            advertisement_age - self.preferred_advertisement_age
+        )
 
         normalized_hp = normalize(car.horse_power, self.min_hp, self.max_hp)
         normalized_price = normalize(car.price, self.min_price, self.max_price)
@@ -116,10 +139,16 @@ class CarsAnalyzer:
             car.mileage, self.min_mileage, self.max_mileage
         )
         normalized_age = normalize(age, self.min_age, self.max_age)
+        normalized_advertisement_age = normalize(
+            advertisement_age,
+            self.min_advertisement_age,
+            self.max_advertisement_age
+        )
 
         return (
             (normalized_hp * self.weight_hp) +
             (normalized_price * self.weight_price) +
             (normalized_mileage * self.weight_mileage) +
-            (normalized_age * self.weight_age)
+            (normalized_age * self.weight_age) +
+            (normalized_advertisement_age * self.weight_advertisement_age)
         )

@@ -51,8 +51,9 @@ class SQLiteSearchesRepository(SearchesRepository):
             (
                 "INSERT INTO cars (id, timestamp, manufacturer, model,"
                 "description, price, attributes, firstRegistration, mileage,"
-                "horsePower, fuelType, detailsURL, imageURL)"
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                "horsePower, fuelType, advertisedSince, privateSeller,"
+                "detailsURL, imageURL)"
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             ),
             [
                 (
@@ -67,6 +68,8 @@ class SQLiteSearchesRepository(SearchesRepository):
                     car.mileage,
                     car.horse_power,
                     car.fuel_type,
+                    car.advertised_since.strftime("%Y-%m-%d %H:%M:%S"),
+                    car.private_seller,
                     car.details_url,
                     car.image_url,
                 )
@@ -107,8 +110,10 @@ class SQLiteSearchesRepository(SearchesRepository):
                 mileage=row[8],
                 horse_power=row[9],
                 fuel_type=row[10],
-                details_url=row[11],
-                image_url=row[12]
+                advertised_since=datetime.strptime(row[11], "%Y-%m-%d %H:%M:%S"),
+                private_seller=bool(row[12]),
+                details_url=row[13],
+                image_url=row[14]
             )
             cars.append(car)
         return cars
@@ -131,7 +136,7 @@ class SQLiteSearchesRepository(SearchesRepository):
 
 
 if __name__ == "__main__":
-    db_path = "data.db"
+    db_path = "drivematch.db"
     repository = SQLiteSearchesRepository(db_path)
 
     search_id = "search123456"
@@ -149,6 +154,8 @@ if __name__ == "__main__":
             mileage=15000,
             horse_power=150,
             fuel_type="Petrol",
+            advertised_since=datetime.now(),
+            private_seller=False,
             details_url="http://example.com/car1",
             image_url="http://example.com/car1.jpg"
         )

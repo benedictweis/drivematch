@@ -44,6 +44,8 @@ class DriveMatchService():
         weight_mileage: float,
         weight_age: float,
         preferred_age: float,
+        weight_advertisement_age: float,
+        preferred_advertisement_age: float,
         filter_by_manufacturers: list[str],
         filter_by_models: list[str],
     ) -> list[ScoredCar]:
@@ -55,6 +57,8 @@ class DriveMatchService():
             weight_mileage,
             weight_age,
             preferred_age,
+            weight_advertisement_age,
+            preferred_advertisement_age,
             filter_by_manufacturers,
             filter_by_models,
         )

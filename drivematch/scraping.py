@@ -43,13 +43,13 @@ class MobileDeScraper(CarsScraper):
         driver.delete_all_cookies()
         driver.get(url)
         soups = []
-        nav_element = driver.find_element(
-            By.CSS_SELECTOR, "nav[aria-label='Weitere Angebote']"
-        )
-        second_to_last_li = nav_element.find_elements(
-            By.CSS_SELECTOR, "ul > li"
-        )[-2]
-        _ = float(second_to_last_li.text.strip())
+        #nav_element = driver.find_element(
+        #    By.CSS_SELECTOR, "nav[aria-label='Weitere Angebote']"
+        #)
+        #second_to_last_li = nav_element.find_elements(
+        #    By.CSS_SELECTOR, "ul > li"
+        #)[-2]
+        #_ = float(second_to_last_li.text.strip())
         time.sleep(random.uniform(1, 2))
         consent_button = driver.find_element(
             By.CLASS_NAME, "mde-consent-accept-btn"
@@ -102,6 +102,13 @@ class MobileDeScraper(CarsScraper):
             )
             description = infos[1]
 
+        online_since_div = link_element.find(
+            lambda tag: tag.name == "div"
+            and "Inserat online seit" in tag.get_text(strip=True)
+        )
+        online_since_text = get_text_from_tag(online_since_div).strip("Inserat online seit ")
+        advertised_since = datetime.strptime(online_since_text, "%d.%m.%Y, %H:%M")
+
         additional_infos = get_text_from_tag(
             link_element.select_one("div > section > div > div")
         ).split("•")
@@ -146,6 +153,15 @@ class MobileDeScraper(CarsScraper):
         else:
             image_url = img.get("src")
 
+        last_div = link_element.find_all("div")[-1]
+        first_div_inside_last = last_div.find("div")
+        seller_info = get_text_from_tag(first_div_inside_last)
+
+        private_seller = False
+
+        if "Privatanbieter" in seller_info:
+            private_seller = True 
+
         return Car(
             id=car_id,
             manufacturer=make,
@@ -157,6 +173,8 @@ class MobileDeScraper(CarsScraper):
             mileage=mileage,
             horse_power=horse_power,
             fuel_type=fuel_type,
+            advertised_since=advertised_since,
+            private_seller=private_seller,
             details_url=details_url,
             image_url=image_url,
         )
