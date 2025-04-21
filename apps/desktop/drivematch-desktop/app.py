@@ -5,6 +5,12 @@ from PySide6.QtWidgets import (
     QTabWidget
 )
 from PySide6.QtCore import Qt
+from PySide6.QtCharts import QChart, QChartView, QScatterSeries, QValueAxis
+from PySide6.QtCore import QDateTime
+from PySide6.QtCharts import QDateTimeAxis
+import numpy as np
+from scipy.optimize import curve_fit
+from PySide6.QtCharts import QLineSeries
 
 from drivematch.service import (
     DriveMatchService, create_default_drivematch_service
@@ -26,6 +32,7 @@ class DriveMatch(QDialog):
     preferred_advertisement_age: QDoubleSpinBox
     scored_cars_table: QTableWidget
     grouped_cars_table: QTableWidget
+    chart: QChart
 
     def __init__(self, drive_match_service: DriveMatchService, parent=None):
         super().__init__(parent)
@@ -100,12 +107,24 @@ class DriveMatch(QDialog):
             ])
         table_splitter.addWidget(scored_cars_widget)
 
+        grouped_cars_plot_splitter = QSplitter(Qt.Horizontal)
+
+        # Create the grouped cars table
         self.grouped_cars_table, grouped_cars_widget = self.create_table(
             "Grouped Cars", [
                 "Selected", "Manufacturer", "Model", "Count", "Avg. Price",
                 "Avg. Mileage", "Avg. Horsepower", "Avg. Age", "Avg. Adv. Age"
             ])
-        table_splitter.addWidget(grouped_cars_widget)
+
+        grouped_cars_plot_splitter.addWidget(grouped_cars_widget)
+
+        self.chart = QChart()
+
+        scatter_chart_view = QChartView(self.chart)
+
+        grouped_cars_plot_splitter.addWidget(scatter_chart_view)
+
+        table_splitter.addWidget(grouped_cars_plot_splitter)
 
         analyze_widget = QWidget()
         analyze_widget.setLayout(analyze_layout)
@@ -284,6 +303,76 @@ class DriveMatch(QDialog):
             self.scored_cars_table.setCellWidget(row, 9, link_label)
 
         self.scored_cars_table.resizeColumnsToContents()
+        
+        # Create a scatter series for the chart
+        scatter_series = QScatterSeries()
+        scatter_series.setName("Cars")
+
+        # Add data points to the scatter series
+        for scored_car in scored_cars:
+            car = scored_car.car
+            date = QDateTime(car.first_registration).toMSecsSinceEpoch()
+            scatter_series.append(date, car.price)
+
+        # Update the chart with the new scatter series
+        self.chart.removeAllSeries()
+        for axes in self.chart.axes():
+            self.chart.removeAxis(axes)
+        self.chart.addSeries(scatter_series)
+        self.chart.setTitle("Car Depreciation Plot")
+
+        date_axis_x = QDateTimeAxis()
+        date_axis_x.setFormat("yyyy-MM-dd")
+        date_axis_x.setTitleText("Date")
+        date_axis_x.setReverse(True)
+        self.chart.addAxis(date_axis_x, Qt.AlignBottom)
+        scatter_series.attachAxis(date_axis_x)
+
+        # Determine the range for the y-axis
+        y_values = [scored_car.car.price for scored_car in scored_cars]
+        if y_values:
+            min_y = min(y_values)
+            max_y = max(y_values)
+            start_y = (min_y // 5000) * 5000  # Nearest lower multiple of 5000
+            end_y = ((max_y + 4999) // 5000) * 5000  # Nearest higher multiple of 5000
+
+            axis_y = QValueAxis()
+            axis_y.setRange(start_y, end_y)
+            axis_y.setTitleText("Value (€)")
+            self.chart.addAxis(axis_y, Qt.AlignLeft)
+            scatter_series.attachAxis(axis_y)
+
+        # Fit a regression curve to the data
+
+        # Prepare data for regression
+        x_data = np.array([QDateTime(scored_car.car.first_registration).toSecsSinceEpoch() for scored_car in scored_cars])
+        y_data = np.array([scored_car.car.price for scored_car in scored_cars])
+
+        if len(x_data) > 1:
+
+            # Fit the regression curve
+            try:
+
+                polyfit = np.polyfit(x_data, y_data, 2)
+                function = np.poly1d(polyfit)
+
+                # Generate points for the regression curve
+                x_curve = np.linspace(x_data.min(), x_data.max(), 500)
+                y_curve = [function(x_point) for x_point in x_curve]
+
+                # Create a line series for the regression curve
+                regression_series = QLineSeries()
+                for x, y in zip(x_curve, y_curve):
+                    print(x, y)
+                    regression_series.append(x*1000, y)
+
+                # Add the regression curve to the chart
+                self.chart.addSeries(regression_series)
+                regression_series.attachAxis(self.chart.axes(Qt.Horizontal)[0])
+                regression_series.attachAxis(self.chart.axes(Qt.Vertical)[0])
+                regression_series.setName("Regression Curve")
+            except Exception as e:
+                print(f"Error fitting regression curve: {e}")
 
     def set_grouped_cars(self):
         # Show grouped cars data based on the selected search and date

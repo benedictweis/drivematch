@@ -10,6 +10,8 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "pyside6 (>=6.9.0,<7.0.0)",
     "drivematch @ file:///Users/I569855/projects/drivematch",
+    "numpy (>=2.2.5,<3.0.0)",
+    "scipy (>=1.15.2,<2.0.0)",
 ]
 
 
