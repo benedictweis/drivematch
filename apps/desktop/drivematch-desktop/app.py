@@ -10,6 +10,7 @@ from PySide6.QtCore import QDateTime
 from PySide6.QtCharts import QDateTimeAxis
 import numpy as np
 from scipy.optimize import curve_fit
+import datetime
 from PySide6.QtCharts import QLineSeries
 
 from drivematch.service import (
@@ -343,28 +344,46 @@ class DriveMatch(QDialog):
             scatter_series.attachAxis(axis_y)
 
         # Fit a regression curve to the data
+        today = datetime.datetime.now()
 
         # Prepare data for regression
-        x_data = np.array([QDateTime(scored_car.car.first_registration).toSecsSinceEpoch() for scored_car in scored_cars])
+        x_data = np.array([(today - scored_car.car.first_registration).days / 365.25 for scored_car in scored_cars])
         y_data = np.array([scored_car.car.price for scored_car in scored_cars])
+        print(y_data)
 
         if len(x_data) > 1:
 
             # Fit the regression curve
             try:
+                
+                # Define multiple depreciation functions for flexibility
+                def linear_depreciation(x, a, b):
+                    return a - b * x
 
-                polyfit = np.polyfit(x_data, y_data, 2)
-                function = np.poly1d(polyfit)
+                def exponential_depreciation(x, a, b):
+                    return a * np.exp(-b * x)
+
+                def power_law_depreciation(x, a, b):
+                    return a * (x ** -b)
+
+                def logarithmic_depreciation(x, a, b):
+                    return a - b * np.log(1 + x)
+
+                # Choose the desired depreciation function
+                depreciation_function = power_law_depreciation
+
+                params, _ = curve_fit(depreciation_function, x_data, y_data)
+                a_fit, k_fit = params
+                print(a_fit, k_fit)
 
                 # Generate points for the regression curve
                 x_curve = np.linspace(x_data.min(), x_data.max(), 500)
-                y_curve = [function(x_point) for x_point in x_curve]
+                y_curve = [depreciation_function(x_point, a_fit, k_fit) for x_point in x_curve]
 
-                # Create a line series for the regression curve
                 regression_series = QLineSeries()
                 for x, y in zip(x_curve, y_curve):
-                    print(x, y)
-                    regression_series.append(x*1000, y)
+                    regression_series.append(QDateTime(today - datetime.timedelta(days=x * 365.25)).toMSecsSinceEpoch(), y)
+    
 
                 # Add the regression curve to the chart
                 self.chart.addSeries(regression_series)
