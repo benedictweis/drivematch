@@ -1,8 +1,7 @@
 from PySide6.QtWidgets import (
     QApplication, QDialog, QGridLayout, QLabel, QWidget,
     QVBoxLayout, QComboBox, QDoubleSpinBox, QTableWidget, QTableWidgetItem,
-    QCheckBox, QSplitter, QSizePolicy, QLineEdit, QPushButton,
-    QTabWidget
+    QCheckBox, QSplitter, QSizePolicy, QTabWidget
 )
 from PySide6.QtCore import Qt
 from PySide6.QtCharts import QChart, QChartView, QScatterSeries, QValueAxis
@@ -17,23 +16,15 @@ from drivematch.service import (
     DriveMatchService, create_default_drivematch_service
 )
 
+from widgets.scrape import ScrapeWidget
+from widgets.analyze import AnalyzeWidget
+from urllib.parse import urlparse
+
 
 class DriveMatch(QDialog):
     drive_match_service: DriveMatchService
-    name_textfield: QLineEdit
-    url_textfield: QLineEdit
-    search_dropdown: QComboBox
-    date_dropdown: QComboBox
-    horsepower_weight: QDoubleSpinBox
-    price_weight: QDoubleSpinBox
-    mileage_weight: QDoubleSpinBox
-    age_weight: QDoubleSpinBox
-    preferred_age: QDoubleSpinBox
-    advertisement_age_weight: QDoubleSpinBox
-    preferred_advertisement_age: QDoubleSpinBox
-    scored_cars_table: QTableWidget
-    grouped_cars_table: QTableWidget
-    chart: QChart
+    scrape_widget: ScrapeWidget
+    analyze_widget: AnalyzeWidget
 
     def __init__(self, drive_match_service: DriveMatchService, parent=None):
         super().__init__(parent)
@@ -42,390 +33,72 @@ class DriveMatch(QDialog):
         self.setWindowTitle("Drive Match")
         self.setGeometry(200, 200, 1000, 600)
 
-        analyze_layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
 
         tab_layout = QVBoxLayout()
-        tab_widget = QTabWidget()
+        tab_widget = QTabWidget(self)
 
-        scrape_widget = self.create_scrape_widget()
-        tab_widget.addTab(scrape_widget, "Scrape")
+        self.scrape_widget = ScrapeWidget(tab_widget)
+        self.scrape_widget.set_scrape_button_action(self.scrape)
+        tab_widget.addTab(self.scrape_widget, "Scrape")
 
-        analyze_widget = self.create_analyze_widget()
-        tab_widget.addTab(analyze_widget, "Analyze")
+        self.analyze_widget = AnalyzeWidget(tab_widget)
+        self.analyze_widget.set_scored_cars_action(self.set_scored_cars)
+        self.analyze_widget.set_date_grouped_cars(self.set_grouped_cars)
+        tab_widget.addTab(self.analyze_widget, "Analyze")
 
         tab_layout.addWidget(tab_widget)
-        analyze_layout.addLayout(tab_layout)
+        main_layout.addLayout(tab_layout)
 
         self.set_searches()
 
-    def create_scrape_widget(self) -> QWidget:
-        scrape_layout = QVBoxLayout()
-
-        scrape_layout.addWidget(QLabel("Name:"))
-
-        self.name_textfield = QLineEdit()
-        self.name_textfield.setPlaceholderText("Enter a name")
-        scrape_layout.addWidget(self.name_textfield)
-
-        scrape_layout.addWidget(QLabel("URL:"))
-
-        self.url_textfield = QLineEdit()
-        self.url_textfield.setPlaceholderText("Enter a mobile.de URL")
-        scrape_layout.addWidget(self.url_textfield)
-
-        scrape_button = QPushButton("Scrape")
-        scrape_button.clicked.connect(self.scrape)
-        scrape_layout.addWidget(scrape_button)
-
-        scrape_widget = QWidget()
-        scrape_widget.setLayout(scrape_layout)
-        scrape_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        container_layout = QVBoxLayout()
-        container_layout.addWidget(scrape_widget, alignment=Qt.AlignCenter)
-
-        container_widget = QWidget()
-        container_widget.setLayout(container_layout)
-        return container_widget
-
-    def create_analyze_widget(self) -> QWidget:
-        analyze_layout = QGridLayout()
-
-        analyze_layout.setColumnStretch(0, 1)
-        analyze_layout.setColumnStretch(1, 4)
-
-        filters_widget = self.create_filters_widget()
-        analyze_layout.addWidget(filters_widget, 0, 0)
-        analyze_layout.setAlignment(filters_widget, Qt.AlignTop)
-
-        table_splitter = QSplitter(Qt.Vertical)
-        analyze_layout.addWidget(table_splitter, 0, 1)
-
-        self.scored_cars_table, scored_cars_widget = self.create_table(
-            "Scored Cars", [
-                "Manufacturer", "Model", "Price", "Mileage", "Horsepower",
-                "Fuel Type", "First Reg.", "Adv. Since", "Seller", "Details"
-            ])
-        table_splitter.addWidget(scored_cars_widget)
-
-        grouped_cars_plot_splitter = QSplitter(Qt.Horizontal)
-
-        # Create the grouped cars table
-        self.grouped_cars_table, grouped_cars_widget = self.create_table(
-            "Grouped Cars", [
-                "Selected", "Manufacturer", "Model", "Count", "Avg. Price",
-                "Avg. Mileage", "Avg. Horsepower", "Avg. Age", "Avg. Adv. Age"
-            ])
-
-        grouped_cars_plot_splitter.addWidget(grouped_cars_widget)
-
-        self.chart = QChart()
-
-        scatter_chart_view = QChartView(self.chart)
-
-        grouped_cars_plot_splitter.addWidget(scatter_chart_view)
-
-        table_splitter.addWidget(grouped_cars_plot_splitter)
-
-        analyze_widget = QWidget()
-        analyze_widget.setLayout(analyze_layout)
-        return analyze_widget
-
-    def create_filters_widget(self) -> QWidget:
-        filters_layout = QVBoxLayout()
-
-        filters_layout.addWidget(QLabel("Settings"))
-
-        filters_layout.addWidget(QLabel("Search:"))
-        self.search_dropdown = QComboBox()
-        self.search_dropdown.currentIndexChanged.connect(self.update_dates)
-        filters_layout.addWidget(self.search_dropdown)
-
-        filters_layout.addWidget(QLabel("Date:"))
-        self.date_dropdown = QComboBox()
-        self.date_dropdown.currentIndexChanged.connect(self.set_scored_cars)
-        self.date_dropdown.currentIndexChanged.connect(self.set_grouped_cars)
-        filters_layout.addWidget(self.date_dropdown)
-
-        filters_layout.addWidget(QLabel("Weights"))
-
-        weights_layout = QGridLayout()
-
-        self.horsepower_weight = self.create_weight_spinbox(weights_layout, "Horsepower:", -100.0, 100.0, 0.1, 1, 1)
-        self.price_weight = self.create_weight_spinbox(weights_layout, "Price:", -100.0, 100.0, 0.1, 1, -1)
-        self.mileage_weight = self.create_weight_spinbox(weights_layout, "Mileage:", -100.0, 100.0, 0.1, 1, -1)
-        self.age_weight = self.create_weight_spinbox(weights_layout, "Age:", -100.0, 100.0, 0.1, 1, -1)
-        self.preferred_age = self.create_weight_spinbox(weights_layout, "Preferred Age:", 0, 17800.0, 1, 0, 0)
-        self.advertisement_age_weight = self.create_weight_spinbox(weights_layout, "Advertisement Age:", -100.0, 100.0, 0.1, 1, -0.5)
-        self.preferred_advertisement_age = self.create_weight_spinbox(weights_layout, "Preferred Advertisement Age:", 0, 17800.0, 1, 0, 0)
-
-        weights_widget = QWidget()
-        weights_widget.setLayout(weights_layout)
-        filters_layout.addWidget(weights_widget)
-
-        filters_widget = QWidget()
-        filters_widget.setLayout(filters_layout)
-        filters_widget.setSizePolicy(filters_widget.sizePolicy().horizontalPolicy(), QSizePolicy.Fixed)
-
-        return filters_widget
-
-    def create_weight_spinbox(self, parent: QGridLayout, label, min_value, max_value, step, decimals, default_value) -> QDoubleSpinBox:
-        parent.addWidget(QLabel(label), parent.rowCount(), 0)
-        spinbox = QDoubleSpinBox()
-        spinbox.setRange(min_value, max_value)
-        spinbox.setSingleStep(step)
-        spinbox.setDecimals(decimals)
-        spinbox.setValue(default_value)
-        spinbox.valueChanged.connect(self.set_scored_cars)
-        parent.addWidget(spinbox, parent.rowCount() - 1, 1)
-        return spinbox
-
-    def create_table(self, label: str, columns: list[str]) -> tuple[QTableWidget, QWidget]:
-        table_layout = QVBoxLayout()
-        table_layout.addWidget(QLabel(label))
-
-        table = QTableWidget()
-        table.setColumnCount(len(columns))
-        table.setHorizontalHeaderLabels(columns)
-        table.setEditTriggers(QTableWidget.NoEditTriggers)
-
-        table_layout.addWidget(table)
-        table_widget = QWidget()
-        table_widget.setLayout(table_layout)
-        return table, table_widget
-
     def scrape(self):
-        # Get the name and URL from the text fields
-        name = self.name_textfield.text()
-        url = self.url_textfield.text()
+        name = self.scrape_widget.get_name_text()
+        url = self.scrape_widget.get_url_text()
 
-        # Validate inputs
         if not name or not url:
             print("Please enter a valid name and URL.")
             return
 
-        # Invoke the scrape function of the drive match service
+        if not name.strip():
+            print("Name cannot be empty.")
+            return
+
+        parsed_url = urlparse(url)
+        if not parsed_url.scheme or not parsed_url.netloc:
+            print("Please enter a valid URL.")
+            return
+
+        self.scrape_widget.clear_name_text()
+        self.scrape_widget.clear_url_text()
+
         self.drive_match_service.scrape(name, url)
 
-        # Clear the text fields after scraping
-        self.name_textfield.clear()
-        self.url_textfield.clear()
-
-        # Update the searches and dates
         self.set_searches()
-        self.update_dates()
 
     def set_searches(self):
-        self.search_dropdown.clear()
-        self.search_dropdown.addItem("Select a search", None)  # Default item
         searches = self.drive_match_service.get_searches()
         unique_searches = {search.name: search for search in searches}.values()
-        for search in unique_searches:
-            self.search_dropdown.addItem(search.name, search.id)
-
-    def update_dates(self):
-        # Clear the date dropdown
-        self.date_dropdown.clear()
-
-        # Get the selected search name
-        selected_search_name = self.search_dropdown.currentText()
-
-        selected_search_id = self.search_dropdown.currentData()
-        if not selected_search_id:
-            # Disable the date dropdown if no valid search is selected
-            self.date_dropdown.setEnabled(False)
-        else:
-            # Fetch dates for the selected search name and populate the date dropdown
-            searches = self.drive_match_service.get_searches()
-            searches_date = [
-                search for search in searches
-                if search.name == selected_search_name
-            ]
-            for search in searches_date:
-                self.date_dropdown.addItem(f"{search.date} ({search.amount_of_cars} cars)", search.id)
-            self.date_dropdown.setEnabled(True)
+        self.analyze_widget.set_searches(unique_searches)
 
     def set_scored_cars(self):
-        # Analyze data based on the selected date and weights
-        selected_date_id = self.date_dropdown.currentData()
-        if not selected_date_id:
-            print("No valid date selected!")
+        selected_search_id = self.analyze_widget.get_selected_search_id()
+        if selected_search_id is None:
+            print("Please select a search.")
             return
-
-        print(f"Scoring cars for search ID: {selected_date_id}")
-
-        selected_cars = []
-
-        # Iterate through all rows in the grouped cars table
-        for row in range(self.grouped_cars_table.rowCount()):
-            checkbox = self.grouped_cars_table.cellWidget(row, 0)  # Get the checkbox widget
-            if checkbox and checkbox.isChecked():  # Check if the checkbox is selected
-                manufacturer = self.grouped_cars_table.item(row, 1).text()
-                model = self.grouped_cars_table.item(row, 2).text()
-                print(f"Selected Car - Manufacturer: {manufacturer}, Model: {model}")
-                selected_cars.append((manufacturer, model))
-
-        # Filter by selected manufacturers and models
-        filter_by_manufacturers = [car[0] for car in selected_cars]
-        filter_by_models = [car[1] for car in selected_cars]
-
-        # Invoke the scores function of the drive match service
+        search_parameters = self.analyze_widget.get_search_parameters()
         scored_cars = self.drive_match_service.get_scores(
-            search_id=selected_date_id,
-            weight_horsepower=self.horsepower_weight.value(),
-            weight_price=self.price_weight.value(),
-            weight_mileage=self.mileage_weight.value(),
-            weight_age=self.age_weight.value(),
-            preferred_age=self.preferred_age.value(),
-            weight_advertisement_age=self.advertisement_age_weight.value(),
-            preferred_advertisement_age=self.preferred_advertisement_age.value(),
-            filter_by_manufacturers=filter_by_manufacturers,
-            filter_by_models=filter_by_models
+            selected_search_id, **search_parameters
         )
-
-        # Clear the scored cars table
-        self.scored_cars_table.setRowCount(0)
-        self.scored_cars_table.setRowCount(len(scored_cars))
-
-        # Populate the table with scored car data
-        for row, scored_car in enumerate(scored_cars):
-            car = scored_car.car
-            self.scored_cars_table.setItem(row, 0, QTableWidgetItem(car.manufacturer))
-            self.scored_cars_table.setItem(row, 1, QTableWidgetItem(car.model))
-            self.scored_cars_table.setItem(row, 2, QTableWidgetItem(f"{car.price:,}".replace(",", ".") + " €"))
-            self.scored_cars_table.setItem(row, 3, QTableWidgetItem(f"{car.mileage:,}".replace(",", ".") + "km"))
-            self.scored_cars_table.setItem(row, 4, QTableWidgetItem(f"{car.horse_power} HP"))
-            self.scored_cars_table.setItem(row, 5, QTableWidgetItem(car.fuel_type))
-            self.scored_cars_table.setItem(row, 6, QTableWidgetItem(car.first_registration.strftime('%Y-%m-%d')))
-            self.scored_cars_table.setItem(row, 7, QTableWidgetItem(car.advertised_since.strftime('%Y-%m-%d')))
-            self.scored_cars_table.setItem(row, 8, QTableWidgetItem("Private" if car.private_seller else "Dealer"))
-            link_label = QLabel(f'<a href="{car.details_url}">Link</a>')
-            link_label.setOpenExternalLinks(True)  # Enable clickable links
-            self.scored_cars_table.setCellWidget(row, 9, link_label)
-
-        self.scored_cars_table.resizeColumnsToContents()
-        
-        # Create a scatter series for the chart
-        scatter_series = QScatterSeries()
-        scatter_series.setName("Cars")
-
-        # Add data points to the scatter series
-        for scored_car in scored_cars:
-            car = scored_car.car
-            date = QDateTime(car.first_registration).toMSecsSinceEpoch()
-            scatter_series.append(date, car.price)
-
-        # Update the chart with the new scatter series
-        self.chart.removeAllSeries()
-        for axes in self.chart.axes():
-            self.chart.removeAxis(axes)
-        self.chart.addSeries(scatter_series)
-        self.chart.setTitle("Car Depreciation Plot")
-
-        date_axis_x = QDateTimeAxis()
-        date_axis_x.setFormat("yyyy-MM-dd")
-        date_axis_x.setTitleText("Date")
-        date_axis_x.setReverse(True)
-        self.chart.addAxis(date_axis_x, Qt.AlignBottom)
-        scatter_series.attachAxis(date_axis_x)
-
-        # Determine the range for the y-axis
-        y_values = [scored_car.car.price for scored_car in scored_cars]
-        if y_values:
-            min_y = min(y_values)
-            max_y = max(y_values)
-            start_y = (min_y // 5000) * 5000  # Nearest lower multiple of 5000
-            end_y = ((max_y + 4999) // 5000) * 5000  # Nearest higher multiple of 5000
-
-            axis_y = QValueAxis()
-            axis_y.setRange(start_y, end_y)
-            axis_y.setTitleText("Value (€)")
-            self.chart.addAxis(axis_y, Qt.AlignLeft)
-            scatter_series.attachAxis(axis_y)
-
-        # Fit a regression curve to the data
-        today = datetime.datetime.now()
-
-        # Prepare data for regression
-        x_data = np.array([(today - scored_car.car.first_registration).days / 365.25 for scored_car in scored_cars])
-        y_data = np.array([scored_car.car.price for scored_car in scored_cars])
-        print(y_data)
-
-        if len(x_data) > 1:
-
-            # Fit the regression curve
-            try:
-                
-                # Define multiple depreciation functions for flexibility
-                def linear_depreciation(x, a, b):
-                    return a - b * x
-
-                def exponential_depreciation(x, a, b):
-                    return a * np.exp(-b * x)
-
-                def power_law_depreciation(x, a, b):
-                    return a * (x ** -b)
-
-                def logarithmic_depreciation(x, a, b):
-                    return a - b * np.log(1 + x)
-
-                # Choose the desired depreciation function
-                depreciation_function = power_law_depreciation
-
-                params, _ = curve_fit(depreciation_function, x_data, y_data)
-                a_fit, k_fit = params
-                print(a_fit, k_fit)
-
-                # Generate points for the regression curve
-                x_curve = np.linspace(x_data.min(), x_data.max(), 500)
-                y_curve = [depreciation_function(x_point, a_fit, k_fit) for x_point in x_curve]
-
-                regression_series = QLineSeries()
-                for x, y in zip(x_curve, y_curve):
-                    regression_series.append(QDateTime(today - datetime.timedelta(days=x * 365.25)).toMSecsSinceEpoch(), y)
-    
-
-                # Add the regression curve to the chart
-                self.chart.addSeries(regression_series)
-                regression_series.attachAxis(self.chart.axes(Qt.Horizontal)[0])
-                regression_series.attachAxis(self.chart.axes(Qt.Vertical)[0])
-                regression_series.setName("Regression Curve")
-            except Exception as e:
-                print(f"Error fitting regression curve: {e}")
+        self.analyze_widget.set_scored_cars(scored_cars)
 
     def set_grouped_cars(self):
-        # Show grouped cars data based on the selected search and date
-        selected_date_id = self.date_dropdown.currentData()
-        if not selected_date_id:
-            print("No valid date selected!")
+        selected_search_id = self.analyze_widget.get_selected_search_id()
+        if selected_search_id is None:
+            print("Please select a search.")
             return
-
-        print(f"Grouping cars for search ID: {selected_date_id}")
-
-        # Invoke the group function of the drive match service
-        grouped_cars = self.drive_match_service.get_groups(selected_date_id)
-
-        # Clear the scored cars table
-        self.grouped_cars_table.setRowCount(0)
-        self.grouped_cars_table.setRowCount(len(grouped_cars))
-
-        # Populate the table with grouped car data
-        for row, grouped_car in enumerate(grouped_cars):
-            # Add a checkbox for selection
-            checkbox = QCheckBox()
-            checkbox.setCheckState(Qt.Unchecked)
-            checkbox.stateChanged.connect(self.set_scored_cars)
-            self.grouped_cars_table.setCellWidget(row, 0, checkbox)
-            self.grouped_cars_table.setItem(row, 1, QTableWidgetItem(grouped_car.manufacturer))
-            self.grouped_cars_table.setItem(row, 2, QTableWidgetItem(grouped_car.model))
-            self.grouped_cars_table.setItem(row, 3, QTableWidgetItem(f"{grouped_car.count}"))
-            self.grouped_cars_table.setItem(row, 4, QTableWidgetItem(f"{round(grouped_car.average_price):,}".replace(",", ".") + " €"))
-            self.grouped_cars_table.setItem(row, 5, QTableWidgetItem(f"{round(grouped_car.average_mileage):,}".replace(",", ".") + " km"))
-            self.grouped_cars_table.setItem(row, 6, QTableWidgetItem(f"{round(grouped_car.average_horse_power):,}".replace(",", ".") + " HP"))
-            self.grouped_cars_table.setItem(row, 7, QTableWidgetItem(f"{round(grouped_car.average_age):,}".replace(",", ".") + " days"))
-            self.grouped_cars_table.setItem(row, 8, QTableWidgetItem(f"{round(grouped_car.average_advertisement_age):,}".replace(",", ".") + " days"))
-
-        self.grouped_cars_table.resizeColumnsToContents()
+        grouped_cars = self.drive_match_service.get_groups(selected_search_id)
+        self.analyze_widget.set_grouped_cars(grouped_cars)
 
 
 if __name__ == "__main__":
