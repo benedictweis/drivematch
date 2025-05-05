@@ -1,12 +1,16 @@
-from PySide6.QtWidgets import QWidget, QGridLayout, QSplitter, QVBoxLayout, QLabel, QComboBox, QDoubleSpinBox, QSizePolicy, QTableWidget, QCheckBox, QTableWidgetItem
-from PySide6.QtCharts import QChart, QChartView, QScatterSeries, QDateTimeAxis, QValueAxis, QLineSeries
+from PySide6.QtWidgets import (
+    QWidget, QGridLayout, QSplitter, QVBoxLayout, QLabel, QComboBox,
+    QDoubleSpinBox, QSizePolicy, QTableWidget, QCheckBox, QTableWidgetItem
+)
+from PySide6.QtCharts import (
+    QChart, QChartView, QScatterSeries, QDateTimeAxis, QValueAxis, QLineSeries
+)
 from PySide6.QtCore import Qt, QDateTime
-from scipy.optimize import curve_fit
-import numpy as np
-import datetime
 
 from drivematch.car import GroupedCarsByManufacturerAndModel, ScoredCar
 from drivematch.db import SearchInfo
+
+import regression
 
 
 class AnalyzeWidget(QWidget):
@@ -97,6 +101,20 @@ class AnalyzeWidget(QWidget):
         weights_widget.setLayout(weights_layout)
         filters_layout.addWidget(weights_widget)
 
+        filters_layout.addWidget(QLabel("Graph Settings"))
+        filters_layout.addWidget(QLabel("Regression Algorithm:"))
+        
+        self.regression_algorithm_dropdown = QComboBox()
+        self.regression_algorithm_dropdown.addItem("Linear", "linear")
+        self.regression_algorithm_dropdown.addItem("Exponential", "exponential")
+        self.regression_algorithm_dropdown.addItem("Power Law", "power_law")
+        self.regression_algorithm_dropdown.addItem("Logarithmic", "logarithmic")
+        self.regression_algorithm_dropdown.addItem("Polynomial 2", "polynomial_2")
+        self.regression_algorithm_dropdown.addItem("Polynomial 3", "polynomial_3")
+        self.regression_algorithm_dropdown.addItem("Polynomial 4", "polynomial_4")
+        self.regression_algorithm_dropdown.setCurrentIndex(3)
+        filters_layout.addWidget(self.regression_algorithm_dropdown)
+
         filters_widget = QWidget()
         filters_widget.setLayout(filters_layout)
         filters_widget.setSizePolicy(filters_widget.sizePolicy().horizontalPolicy(), QSizePolicy.Fixed)
@@ -137,6 +155,7 @@ class AnalyzeWidget(QWidget):
         self.preferred_age.valueChanged.connect(scored_cars_changed_action)
         self.advertisement_age_weight.valueChanged.connect(scored_cars_changed_action)
         self.preferred_advertisement_age.valueChanged.connect(scored_cars_changed_action)
+        self.regression_algorithm_dropdown.currentIndexChanged.connect(self.set_scored_cars_action)
 
     def set_date_grouped_cars(self, date_changed_action: object):
         self.date_dropdown.currentIndexChanged.connect(date_changed_action)
@@ -221,6 +240,9 @@ class AnalyzeWidget(QWidget):
         self.__update_scatter_plot(scored_cars)
 
     def __update_scatter_plot(self, scored_cars: list[ScoredCar]):
+        if (not scored_cars or len(scored_cars) < 5):
+            return
+        
         # Create a scatter series for the chart
         scatter_series = QScatterSeries()
         scatter_series.setName("Cars")
@@ -236,11 +258,11 @@ class AnalyzeWidget(QWidget):
         for axes in self.chart.axes():
             self.chart.removeAxis(axes)
         self.chart.addSeries(scatter_series)
-        self.chart.setTitle("Car Depreciation Plot")
+        self.chart.setTitle("Car Price vs. Age Plot")
 
         date_axis_x = QDateTimeAxis()
         date_axis_x.setFormat("yyyy-MM-dd")
-        date_axis_x.setTitleText("Date")
+        date_axis_x.setTitleText("First Registration")
         date_axis_x.setReverse(True)
         self.chart.addAxis(date_axis_x, Qt.AlignBottom)
         scatter_series.attachAxis(date_axis_x)
@@ -255,57 +277,21 @@ class AnalyzeWidget(QWidget):
 
             axis_y = QValueAxis()
             axis_y.setRange(start_y, end_y)
-            axis_y.setTitleText("Value (€)")
+            axis_y.setTitleText("Price (€)")
             self.chart.addAxis(axis_y, Qt.AlignLeft)
             scatter_series.attachAxis(axis_y)
 
-        # Fit a regression curve to the data
-        today = datetime.datetime.now()
+        x_curve, y_curve = regression.regression_line(scored_cars, self.regression_algorithm_dropdown.currentData())
 
-        # Prepare data for regression
-        x_data = np.array([(today - scored_car.car.first_registration).days / 365.25 for scored_car in scored_cars])
-        y_data = np.array([scored_car.car.price for scored_car in scored_cars])
+        regression_series = QLineSeries()
+        for x, y in zip(x_curve, y_curve):
+            regression_series.append(QDateTime(x).toMSecsSinceEpoch(), y)
 
-        if len(x_data) > 1:
-
-            # Fit the regression curve
-            try:
-
-                # Define multiple depreciation functions for flexibility
-                def linear_depreciation(x, a, b):
-                    return a - b * x
-
-                def exponential_depreciation(x, a, b):
-                    return a * np.exp(-b * x)
-
-                def power_law_depreciation(x, a, b):
-                    return a * (x ** -b)
-
-                def logarithmic_depreciation(x, a, b):
-                    return a - b * np.log(1 + x)
-
-                # Choose the desired depreciation function
-                depreciation_function = power_law_depreciation
-
-                params, _ = curve_fit(depreciation_function, x_data, y_data)
-                a_fit, k_fit = params
-
-                # Generate points for the regression curve
-                x_curve = np.linspace(x_data.min(), x_data.max(), 500)
-                y_curve = [depreciation_function(x_point, a_fit, k_fit) for x_point in x_curve]
-
-                regression_series = QLineSeries()
-                for x, y in zip(x_curve, y_curve):
-                    regression_series.append(QDateTime(today - datetime.timedelta(days=x * 365.25)).toMSecsSinceEpoch(), y)
-    
-
-                # Add the regression curve to the chart
-                self.chart.addSeries(regression_series)
-                regression_series.attachAxis(self.chart.axes(Qt.Horizontal)[0])
-                regression_series.attachAxis(self.chart.axes(Qt.Vertical)[0])
-                regression_series.setName("Regression Curve")
-            except Exception as e:
-                print(f"Error fitting regression curve: {e}")
+        # Add the regression curve to the chart
+        self.chart.addSeries(regression_series)
+        regression_series.attachAxis(self.chart.axes(Qt.Horizontal)[0])
+        regression_series.attachAxis(self.chart.axes(Qt.Vertical)[0])
+        regression_series.setName("Regression Curve")
 
     def set_grouped_cars(self, grouped_cars: list[GroupedCarsByManufacturerAndModel]):
         self.grouped_cars_table.setRowCount(0)

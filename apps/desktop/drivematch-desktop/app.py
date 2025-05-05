@@ -1,24 +1,12 @@
-from PySide6.QtWidgets import (
-    QApplication, QDialog, QGridLayout, QLabel, QWidget,
-    QVBoxLayout, QComboBox, QDoubleSpinBox, QTableWidget, QTableWidgetItem,
-    QCheckBox, QSplitter, QSizePolicy, QTabWidget
-)
-from PySide6.QtCore import Qt
-from PySide6.QtCharts import QChart, QChartView, QScatterSeries, QValueAxis
-from PySide6.QtCore import QDateTime
-from PySide6.QtCharts import QDateTimeAxis
-import numpy as np
-from scipy.optimize import curve_fit
-import datetime
-from PySide6.QtCharts import QLineSeries
-
-from drivematch.service import (
-    DriveMatchService, create_default_drivematch_service
-)
+from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout, QTabWidget
 
 from widgets.scrape import ScrapeWidget
 from widgets.analyze import AnalyzeWidget
 from urllib.parse import urlparse
+
+from drivematch.service import (
+    DriveMatchService, create_default_drivematch_service
+)
 
 
 class DriveMatch(QDialog):

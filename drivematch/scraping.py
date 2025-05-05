@@ -104,10 +104,13 @@ class MobileDeScraper(CarsScraper):
 
         online_since_div = link_element.find(
             lambda tag: tag.name == "div"
-            and "Inserat online seit" in tag.get_text(strip=True)
+            and tag.get_text(strip=True).startswith("Inserat online seit")
         )
-        online_since_text = get_text_from_tag(online_since_div).strip("Inserat online seit ")
-        advertised_since = datetime.strptime(online_since_text, "%d.%m.%Y, %H:%M")
+        if online_since_div is None:
+            advertised_since = datetime.now()
+        else:
+            online_since_text = get_text_from_tag(online_since_div).strip("Inserat online seit ")
+            advertised_since = datetime.strptime(online_since_text, "%d.%m.%Y, %H:%M")
 
         additional_infos = get_text_from_tag(
             link_element.select_one("div > section > div > div")
@@ -153,7 +156,7 @@ class MobileDeScraper(CarsScraper):
         else:
             image_url = img.get("src")
 
-        last_div = link_element.find_all("div")[-1]
+        last_div = link_element.find_all("div", recursive=False)[-1]
         first_div_inside_last = last_div.find("div")
         seller_info = get_text_from_tag(first_div_inside_last)
 
