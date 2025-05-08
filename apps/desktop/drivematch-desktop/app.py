@@ -1,15 +1,21 @@
-from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout, QTabWidget
+from PySide6.QtWidgets import (
+    QApplication, QDialog, QVBoxLayout,
+    QTabWidget, QMessageBox,
+)
 
 from widgets.scrape import ScrapeWidget
 from widgets.analyze import AnalyzeWidget
 from urllib.parse import urlparse
+
+import platformdirs
+import os
 
 from drivematch.service import (
     DriveMatchService, create_default_drivematch_service
 )
 
 
-class DriveMatch(QDialog):
+class DriveMatchDialog(QDialog):
     drive_match_service: DriveMatchService
     scrape_widget: ScrapeWidget
     analyze_widget: AnalyzeWidget
@@ -89,9 +95,29 @@ class DriveMatch(QDialog):
         self.analyze_widget.set_grouped_cars(grouped_cars)
 
 
-if __name__ == "__main__":
+def main():
     app = QApplication()
-    drive_match_service = create_default_drivematch_service("./drivematch.db")
-    drive_match = DriveMatch(drive_match_service)
+    data_dir = platformdirs.user_data_dir(
+        "DriveMatch", "DriveMatch", ensure_exists=True)
+
+    db_path = os.path.join(data_dir, "drivematch.db")
+    if not os.path.exists(db_path):
+        show_error_message("Cloud not find DriveMatch database at " + db_path)
+        return
+
+    drive_match_service = create_default_drivematch_service(db_path)
+
+    drive_match = DriveMatchDialog(drive_match_service)
     drive_match.show()
     app.exec()
+
+
+def show_error_message(message: str):
+    print(f"Error: {message}")
+    msgBox = QMessageBox()
+    msgBox.setText(message)
+    msgBox.exec()
+
+
+if __name__ == "__main__":
+    main()

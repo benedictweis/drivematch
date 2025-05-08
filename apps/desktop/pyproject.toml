@@ -12,6 +12,7 @@ dependencies = [
     "drivematch @ file:///Users/I569855/projects/drivematch",
     "numpy (>=2.2.5,<3.0.0)",
     "scipy (>=1.15.2,<2.0.0)",
+    "platformdirs (>=4.3.8,<5.0.0)",
 ]
 
 
