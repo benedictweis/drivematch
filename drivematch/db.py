@@ -36,6 +36,16 @@ class SQLiteSearchesRepository(SearchesRepository):
         self.connection = sqlite3.connect(db_path, check_same_thread=False)
         self.cursor = self.connection.cursor()
 
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS searches (id TEXT PRIMARY KEY, name TEXT, url TEXT, timestamp DATETIME)")
+
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS searches (id TEXT PRIMARY KEY, name TEXT, url TEXT, timestamp DATETIME)")
+
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS searches_cars (search_id TEXT, car_id TEXT, FOREIGN KEY (search_id) REFERENCES searches(id), FOREIGN KEY (car_id) REFERENCES cars(id))")
+
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS cars (id TEXT, timestamp DATETIME, manufacturer TEXT, model TEXT, description TEXT, price INTEGER, attributes TEXT, firstRegistration DATETIME, mileage INTEGER, horsePower INTEGER, fuelType TEXT, advertisedSince DATETIME, privateSeller INTEGER, detailsURL TEXT, imageURL TEXT, PRIMARY KEY (id, timestamp))") 
+
+        self.connection.commit()
+
     def insert_cars_for_search(
         self, search_id: str, name: str, url: str, cars: list[Car]
     ):
@@ -133,40 +143,3 @@ class SQLiteSearchesRepository(SearchesRepository):
             searches.append(search)
         self.connection.commit()
         return searches
-
-
-if __name__ == "__main__":
-    db_path = "drivematch.db"
-    repository = SQLiteSearchesRepository(db_path)
-
-    search_id = "search123456"
-    name = "Example Search"
-    url = "http://example.com"
-    cars = [
-        Car(
-            id="car1",
-            manufacturer="Toyota",
-            model="Corolla",
-            description="A reliable car",
-            price=20000,
-            attributes=["automatic", "sedan"],
-            first_registration=datetime.now(),
-            mileage=15000,
-            horse_power=150,
-            fuel_type="Petrol",
-            advertised_since=datetime.now(),
-            private_seller=False,
-            details_url="http://example.com/car1",
-            image_url="http://example.com/car1.jpg"
-        )
-    ]
-
-    repository.insert_cars_for_search(search_id, name, url, cars)
-
-    retrieved_cars = repository.get_cars_for_search(search_id)
-    print("Retrieved Cars:")
-    print(retrieved_cars)
-
-    searches = repository.get_searches()
-    print("Searches:")
-    print(searches)
