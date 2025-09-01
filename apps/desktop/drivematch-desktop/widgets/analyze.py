@@ -10,6 +10,10 @@ from PySide6.QtCore import Qt, QDateTime
 from drivematch.types import GroupedCarsByManufacturerAndModel, ScoredCar, SearchInfo
 
 import regression
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class AnalyzeWidget(QWidget):
@@ -160,10 +164,12 @@ class AnalyzeWidget(QWidget):
         self.date_dropdown.currentIndexChanged.connect(date_changed_action)
 
     def set_searches(self, searches: list[SearchInfo]):
+        logger.debug(f"Setting {searches=}")
         self.searches = searches
         self.search_dropdown.clear()
         self.search_dropdown.addItem("Select a search", None)
-        for search in self.searches:
+        unique_searches = {search.name: search for search in searches}.values()
+        for search in unique_searches:
             self.search_dropdown.addItem(search.name, search.id)
 
         self.__set_dates()
@@ -182,12 +188,15 @@ class AnalyzeWidget(QWidget):
             search for search in self.searches
             if search.name == selected_search_name
         ]
+        
+        logger.debug(f"Setting {selected_search_id=} {searches_date=}")
+        
         for search in searches_date:
             self.date_dropdown.addItem(f"{search.date} ({search.amount_of_cars} cars)", search.id)
         self.date_dropdown.setEnabled(True)
     
     def get_selected_search_id(self) -> int:
-        return self.search_dropdown.currentData()
+        return self.date_dropdown.currentData()
     
     def get_search_parameters(self) -> dict:
         selected_cars = []

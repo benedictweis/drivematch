@@ -76,8 +76,7 @@ class DriveMatchDialog(QDialog):
 
     def set_searches(self):
         searches = self.drive_match_service.get_searches()
-        unique_searches = {search.name: search for search in searches}.values()
-        self.analyze_widget.set_searches(unique_searches)
+        self.analyze_widget.set_searches(searches)
 
     def set_scored_cars(self):
         selected_search_id = self.analyze_widget.get_selected_search_id()
