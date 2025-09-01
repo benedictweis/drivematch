@@ -2,7 +2,7 @@ import datetime
 import numpy as np
 from scipy.optimize import curve_fit
 
-from drivematch.analysis import ScoredCar
+from drivematch.types import ScoredCar
 
 
 def regression_line(

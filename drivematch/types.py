@@ -1,4 +1,5 @@
-from datetime import datetime
+import datetime
+
 from pydantic import BaseModel
 
 
@@ -9,11 +10,11 @@ class Car(BaseModel):
     description: str
     price: int
     attributes: list[str]
-    first_registration: datetime
+    first_registration: datetime.datetime
     mileage: int
     horse_power: int
     fuel_type: str
-    advertised_since: datetime
+    advertised_since: datetime.datetime
     private_seller: bool
     details_url: str
     image_url: str
@@ -34,3 +35,11 @@ class GroupedCarsByManufacturerAndModel(BaseModel):
     average_age: float
     average_advertisement_age: float
     cars: list[Car]
+
+
+class SearchInfo(BaseModel):
+    id: str
+    name: str
+    url: str
+    amount_of_cars: int
+    date: str

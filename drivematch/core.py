@@ -1,20 +1,24 @@
 import uuid
+import logging
 
-from drivematch.analysis import CarsAnalyzer
-from drivematch.scraping import CarsScraper
-from drivematch.car import GroupedCarsByManufacturerAndModel, ScoredCar
-from drivematch.db import SearchInfo, SearchesRepository
+from .types import ScoredCar, GroupedCarsByManufacturerAndModel
+from ._internal.analysis import CarsAnalyzer
+from ._internal.scraping import CarsScraper
+from ._internal.db import SearchInfo, SearchesRepository
+
+
+logger = logging.getLogger(__name__)
 
 
 def create_default_drivematch_service(db_path: str):
-    from drivematch.db import SQLiteSearchesRepository
-    from drivematch.scraping import MobileDeScraper
-    from drivematch.analysis import CarsAnalyzer
+    from ._internal.db import SQLiteSearchesRepository
+    from ._internal.scraping import MobileDeScraper
+    from ._internal.analysis import CarsAnalyzer
 
     return DriveMatchService(
         SQLiteSearchesRepository(db_path),
         MobileDeScraper(),
-        CarsAnalyzer()
+        CarsAnalyzer(),
     )
 
 
@@ -23,13 +27,14 @@ class DriveMatchService():
         self,
         searches_repository: SearchesRepository,
         cars_scraper: CarsScraper,
-        cars_analyzer: CarsAnalyzer
+        cars_analyzer: CarsAnalyzer,
     ):
         self.searches_repository = searches_repository
         self.cars_scraper = cars_scraper
         self.cars_analyzer = cars_analyzer
 
     def scrape(self, name: str, url: str):
+        logger.info(f"Scraping with {name=} and {url=}")
         cars = self.cars_scraper.scrape(url)
         search_id = str(uuid.uuid4())
         self.searches_repository.insert_cars_for_search(
@@ -49,6 +54,7 @@ class DriveMatchService():
         filter_by_manufacturers: list[str],
         filter_by_models: list[str],
     ) -> list[ScoredCar]:
+        logger.info(f"Getting scores for search {search_id=}")
         cars = self.searches_repository.get_cars_for_search(search_id)
         self.cars_analyzer.set_cars(cars)
         self.cars_analyzer.set_weights_and_filters(

@@ -7,8 +7,7 @@ from PySide6.QtCharts import (
 )
 from PySide6.QtCore import Qt, QDateTime
 
-from drivematch.car import GroupedCarsByManufacturerAndModel, ScoredCar
-from drivematch.db import SearchInfo
+from drivematch.types import GroupedCarsByManufacturerAndModel, ScoredCar, SearchInfo
 
 import regression
 

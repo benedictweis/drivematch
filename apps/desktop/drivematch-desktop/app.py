@@ -12,24 +12,23 @@ import os
 import logging
 import sys
 
-from drivematch.service import (
+from drivematch.core import (
     DriveMatchService, create_default_drivematch_service
 )
+
 
 logger = logging.getLogger(__name__)
 
 
 class DriveMatchDialog(QDialog):
     drive_match_service: DriveMatchService
-    logger: logging.Logger
 
     scrape_widget: ScrapeWidget
     analyze_widget: AnalyzeWidget
 
-    def __init__(self, drive_match_service: DriveMatchService, logger: logging.Logger, parent=None):
+    def __init__(self, drive_match_service: DriveMatchService, parent=None):
         super().__init__(parent)
         self.drive_match_service = drive_match_service
-        self.logger = logger
 
         self.setWindowTitle("Drive Match")
         self.setGeometry(200, 200, 1000, 600)
@@ -58,13 +57,13 @@ class DriveMatchDialog(QDialog):
         url = self.scrape_widget.get_url_text()
 
         if not name.strip():
-            self.logger.info("Got empty name: %s", name)
+            logger.info("Got empty name: %s", name)
             show_error_message("Please enter a valid name.")
             return
 
         parsed_url = urlparse(url)
         if not url or not url.strip() or not parsed_url.scheme or not parsed_url.netloc:
-            self.logger.info("Got invalid url: %s", url)
+            logger.info("Got invalid url: %s", url)
             show_error_message("Please enter a valid URL.")
             return
 
@@ -83,7 +82,7 @@ class DriveMatchDialog(QDialog):
     def set_scored_cars(self):
         selected_search_id = self.analyze_widget.get_selected_search_id()
         if selected_search_id is None:
-            self.logger.info("Got invalid selected search: %s", selected_search_id)
+            logger.info("Got invalid selected search: %s", selected_search_id)
             show_error_message("Please select a search.")
             return
         search_parameters = self.analyze_widget.get_search_parameters()
@@ -95,7 +94,7 @@ class DriveMatchDialog(QDialog):
     def set_grouped_cars(self):
         selected_search_id = self.analyze_widget.get_selected_search_id()
         if selected_search_id is None:
-            self.logger.info("Got invalid selected search: %s", selected_search_id)
+            logger.info("Got invalid selected search: %s", selected_search_id)
             show_error_message("Please select a search.")
             return
         grouped_cars = self.drive_match_service.get_groups(selected_search_id)
@@ -106,7 +105,7 @@ def main():
     app = QApplication()
     logging.basicConfig(
         format='%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-        level=logging.DEBUG
+        level=logging.INFO
     )
 
     if len(sys.argv) > 1:
@@ -125,7 +124,7 @@ def main():
 
     drive_match_service = create_default_drivematch_service(db_path)
 
-    drive_match = DriveMatchDialog(drive_match_service, logger)
+    drive_match = DriveMatchDialog(drive_match_service)
     drive_match.show()
     app.exec()
 

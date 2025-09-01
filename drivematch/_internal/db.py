@@ -1,18 +1,9 @@
 import sqlite3
 
 from abc import ABC, abstractmethod
-from pydantic import BaseModel
 from datetime import datetime
 
-from drivematch.car import Car
-
-
-class SearchInfo(BaseModel):
-    id: str
-    name: str
-    url: str
-    amount_of_cars: int
-    date: str
+from ..types import Car, SearchInfo
 
 
 class SearchesRepository(ABC):
@@ -37,11 +28,8 @@ class SQLiteSearchesRepository(SearchesRepository):
         self.cursor = self.connection.cursor()
 
         self.cursor.execute("CREATE TABLE IF NOT EXISTS searches (id TEXT PRIMARY KEY, name TEXT, url TEXT, timestamp DATETIME)")
-
         self.cursor.execute("CREATE TABLE IF NOT EXISTS searches (id TEXT PRIMARY KEY, name TEXT, url TEXT, timestamp DATETIME)")
-
         self.cursor.execute("CREATE TABLE IF NOT EXISTS searches_cars (search_id TEXT, car_id TEXT, FOREIGN KEY (search_id) REFERENCES searches(id), FOREIGN KEY (car_id) REFERENCES cars(id))")
-
         self.cursor.execute("CREATE TABLE IF NOT EXISTS cars (id TEXT, timestamp DATETIME, manufacturer TEXT, model TEXT, description TEXT, price INTEGER, attributes TEXT, firstRegistration DATETIME, mileage INTEGER, horsePower INTEGER, fuelType TEXT, advertisedSince DATETIME, privateSeller INTEGER, detailsURL TEXT, imageURL TEXT, PRIMARY KEY (id, timestamp))") 
 
         self.connection.commit()

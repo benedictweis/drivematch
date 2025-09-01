@@ -1,7 +1,7 @@
 from typing import Callable
 from datetime import datetime
 
-from drivematch.car import Car, GroupedCarsByManufacturerAndModel, ScoredCar
+from ..types import Car, GroupedCarsByManufacturerAndModel, ScoredCar
 
 
 def group_by[T](
