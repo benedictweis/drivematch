@@ -5,17 +5,25 @@ description = ""
 authors = [
     { name = "Benedict Weis", email = "47110382+benedictweis@users.noreply.github.com" },
 ]
-license = { text = "Apache 2.0" }
 requires-python = ">=3.13,<3.14"
+license = { text = "Apache 2.0" }
 dependencies = [
     "pyside6 (>=6.9.0,<7.0.0)",
-    "drivematch @ file:///Users/I569855/projects/drivematch",
     "numpy (>=2.2.5,<3.0.0)",
     "scipy (>=1.15.2,<2.0.0)",
     "platformdirs (>=4.3.8,<5.0.0)",
+    "drivematch",
 ]
 
-
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["drivematch-desktop"]
+
+[tool.uv.sources]
+drivematch = { path = "../../" }
+
+[dependency-groups]
+dev = ["pyinstaller>=6.15.0"]

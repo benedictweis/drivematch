@@ -31,14 +31,14 @@ class CarsScraper(ABC):
 
 class MobileDeScraper(CarsScraper):
     def scrape(self, url: str) -> list[Car]:
-        soups = self.get_soups(url)
+        soups = self.__get_soups(url)
         cars = []
         for soup in soups:
-            cars.extend(self.get_cars_from_soup(soup))
+            cars.extend(self.__get_cars_from_soup(soup))
         cars = list({car.id: car for car in cars}.values())
         return cars
 
-    def get_soups(self, url: str) -> list[BeautifulSoup]:
+    def __get_soups(self, url: str) -> list[BeautifulSoup]:
         driver = webdriver.Firefox(options=firefox_options)
         driver.delete_all_cookies()
         driver.get(url)
@@ -69,17 +69,17 @@ class MobileDeScraper(CarsScraper):
         driver.quit()
         return soups
 
-    def get_cars_from_soup(self, soup: BeautifulSoup) -> list[Car]:
+    def __get_cars_from_soup(self, soup: BeautifulSoup) -> list[Car]:
         links = soup.select(
             (
                 "article > section > div > div > "
                 "a[href^='/fahrzeuge/details.html?']"
             )
         )
-        cars = [self.parse_car_details(link) for link in links]
+        cars = [self.__parse_car_details(link) for link in links]
         return cars
 
-    def parse_car_details(self, link_element: Tag) -> Car:
+    def __parse_car_details(self, link_element: Tag) -> Car:
         info_spans = link_element.find_all(
             lambda tag: tag.name == "span"
             and tag.get_text(strip=True) != "Gesponsert"
@@ -138,6 +138,7 @@ class MobileDeScraper(CarsScraper):
                     .split(" ")[0]
                     .replace("PS", "")
                     .replace(")", "")
+                    .replace(".", "")
                 )
             elif info in ["Benzin",
                           "Diesel",

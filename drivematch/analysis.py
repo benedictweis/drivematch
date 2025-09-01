@@ -126,7 +126,7 @@ class CarsAnalyzer:
     def score(self, car: Car) -> float:
         age = (datetime.now() - car.first_registration).days
         age = abs(age - self.preferred_age)
-        
+
         advertisement_age = (
             datetime.now() - car.advertised_since
         ).days

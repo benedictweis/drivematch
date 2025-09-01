@@ -10,10 +10,13 @@ from urllib.parse import urlparse
 import platformdirs
 import os
 import logging
+import sys
 
 from drivematch.service import (
     DriveMatchService, create_default_drivematch_service
 )
+
+logger = logging.getLogger(__name__)
 
 
 class DriveMatchDialog(QDialog):
@@ -101,19 +104,24 @@ class DriveMatchDialog(QDialog):
 
 def main():
     app = QApplication()
-    data_dir = platformdirs.user_data_dir(
-        "DriveMatch", "DriveMatch", ensure_exists=True)
+    logging.basicConfig(
+        format='%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+        level=logging.DEBUG
+    )
 
-    logger = logging.getLogger("DriveMatch")
-    logger.setLevel(logging.DEBUG)
-    console_handler = logging.StreamHandler()
-    logger.addHandler(console_handler)
+    if len(sys.argv) > 1:
+        db_path = sys.argv[1]
+    else:
+        data_dir = platformdirs.user_data_dir(
+            "DriveMatch", "DriveMatch", ensure_exists=True)
+        db_path = os.path.join(data_dir, "drivematch.db")
 
-    db_path = os.path.join(data_dir, "drivematch.db")
     if not os.path.exists(db_path):
         logger.critical("DriveMatch database not found at %s", db_path)
-        show_error_message("Cloud not find DriveMatch database at " + db_path)
+        show_error_message("Could not find DriveMatch database at " + db_path)
         return
+
+    logger.info("Using DriveMatch database at %s", db_path)
 
     drive_match_service = create_default_drivematch_service(db_path)
 
