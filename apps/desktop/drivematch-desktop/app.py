@@ -1,21 +1,19 @@
-from PySide6.QtWidgets import (
-    QApplication, QDialog, QVBoxLayout,
-    QTabWidget, QMessageBox,
-)
-
-from widgets.scrape import ScrapeWidget
-from widgets.analyze import AnalyzeWidget
+import logging
+import os
+import sys
 from urllib.parse import urlparse
 
 import platformdirs
-import os
-import logging
-import sys
-
-from drivematch.core import (
-    DriveMatchService, create_default_drivematch_service
+from drivematch.core import DriveMatchService, create_default_drivematch_service
+from PySide6.QtWidgets import (
+    QApplication,
+    QDialog,
+    QMessageBox,
+    QTabWidget,
+    QVBoxLayout,
 )
-
+from widgets.analyze import AnalyzeWidget
+from widgets.scrape import ScrapeWidget
 
 logger = logging.getLogger(__name__)
 
@@ -103,15 +101,16 @@ class DriveMatchDialog(QDialog):
 def main():
     app = QApplication()
     logging.basicConfig(
-        format='%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
-        level=logging.INFO
+        format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",
+        level=logging.INFO,
     )
 
     if len(sys.argv) > 1:
         db_path = sys.argv[1]
     else:
         data_dir = platformdirs.user_data_dir(
-            "DriveMatch", "DriveMatch", ensure_exists=True)
+            "DriveMatch", "DriveMatch", ensure_exists=True
+        )
         db_path = os.path.join(data_dir, "drivematch.db")
 
     if not os.path.exists(db_path):

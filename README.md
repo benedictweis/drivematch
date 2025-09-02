@@ -6,3 +6,4 @@
 - improve database handling
 - use sqlmodel from fastapi
 - write tests
+- ruff

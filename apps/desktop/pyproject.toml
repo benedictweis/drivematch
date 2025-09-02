@@ -26,4 +26,7 @@ packages = ["drivematch-desktop"]
 drivematch = { path = "../../" }
 
 [dependency-groups]
-dev = ["pyinstaller>=6.15.0"]
+dev = [
+    "pyinstaller>=6.15.0",
+    "ruff>=0.12.11",
+]

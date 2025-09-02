@@ -1,17 +1,29 @@
-from PySide6.QtWidgets import (
-    QWidget, QGridLayout, QSplitter, QVBoxLayout, QLabel, QComboBox,
-    QDoubleSpinBox, QSizePolicy, QTableWidget, QCheckBox, QTableWidgetItem
-)
-from PySide6.QtCharts import (
-    QChart, QChartView, QScatterSeries, QDateTimeAxis, QValueAxis, QLineSeries
-)
-from PySide6.QtCore import Qt, QDateTime
-
-from drivematch.types import GroupedCarsByManufacturerAndModel, ScoredCar, SearchInfo
-
-import regression
 import logging
 
+import regression
+from drivematch.types import GroupedCarsByManufacturerAndModel, ScoredCar, SearchInfo
+from PySide6.QtCharts import (
+    QChart,
+    QChartView,
+    QDateTimeAxis,
+    QLineSeries,
+    QScatterSeries,
+    QValueAxis,
+)
+from PySide6.QtCore import QDateTime, Qt
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QGridLayout,
+    QLabel,
+    QSizePolicy,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,20 +59,39 @@ class AnalyzeWidget(QWidget):
         analyze_layout.addWidget(table_splitter, 0, 1)
 
         self.scored_cars_table, scored_cars_widget = self.__create_table(
-            "Scored Cars", [
-                "Manufacturer", "Model", "Price", "Mileage", "Horsepower",
-                "Fuel Type", "First Reg.", "Adv. Since", "Seller", "Details"
-            ])
+            "Scored Cars",
+            [
+                "Manufacturer",
+                "Model",
+                "Price",
+                "Mileage",
+                "Horsepower",
+                "Fuel Type",
+                "First Reg.",
+                "Adv. Since",
+                "Seller",
+                "Details",
+            ],
+        )
         table_splitter.addWidget(scored_cars_widget)
 
         grouped_cars_plot_splitter = QSplitter(Qt.Horizontal)
 
         # Create the grouped cars table
         self.grouped_cars_table, grouped_cars_widget = self.__create_table(
-            "Grouped Cars", [
-                "Selected", "Manufacturer", "Model", "Count", "Avg. Price",
-                "Avg. Mileage", "Avg. Horsepower", "Avg. Age", "Avg. Adv. Age"
-            ])
+            "Grouped Cars",
+            [
+                "Selected",
+                "Manufacturer",
+                "Model",
+                "Count",
+                "Avg. Price",
+                "Avg. Mileage",
+                "Avg. Horsepower",
+                "Avg. Age",
+                "Avg. Adv. Age",
+            ],
+        )
 
         grouped_cars_plot_splitter.addWidget(grouped_cars_widget)
 
@@ -92,13 +123,27 @@ class AnalyzeWidget(QWidget):
 
         weights_layout = QGridLayout()
 
-        self.horsepower_weight = self.__create_weight_spinbox(weights_layout, "Horsepower:", -100.0, 100.0, 0.1, 1, 1)
-        self.price_weight = self.__create_weight_spinbox(weights_layout, "Price:", -100.0, 100.0, 0.1, 1, -1)
-        self.mileage_weight = self.__create_weight_spinbox(weights_layout, "Mileage:", -100.0, 100.0, 0.1, 1, -1)
-        self.age_weight = self.__create_weight_spinbox(weights_layout, "Age:", -100.0, 100.0, 0.1, 1, -1)
-        self.preferred_age = self.__create_weight_spinbox(weights_layout, "Preferred Age:", 0, 17800.0, 1, 0, 0)
-        self.advertisement_age_weight = self.__create_weight_spinbox(weights_layout, "Advertisement Age:", -100.0, 100.0, 0.1, 1, -0.5)
-        self.preferred_advertisement_age = self.__create_weight_spinbox(weights_layout, "Preferred Advertisement Age:", 0, 17800.0, 1, 0, 0)
+        self.horsepower_weight = self.__create_weight_spinbox(
+            weights_layout, "Horsepower:", -100.0, 100.0, 0.1, 1, 1
+        )
+        self.price_weight = self.__create_weight_spinbox(
+            weights_layout, "Price:", -100.0, 100.0, 0.1, 1, -1
+        )
+        self.mileage_weight = self.__create_weight_spinbox(
+            weights_layout, "Mileage:", -100.0, 100.0, 0.1, 1, -1
+        )
+        self.age_weight = self.__create_weight_spinbox(
+            weights_layout, "Age:", -100.0, 100.0, 0.1, 1, -1
+        )
+        self.preferred_age = self.__create_weight_spinbox(
+            weights_layout, "Preferred Age:", 0, 17800.0, 1, 0, 0
+        )
+        self.advertisement_age_weight = self.__create_weight_spinbox(
+            weights_layout, "Advertisement Age:", -100.0, 100.0, 0.1, 1, -0.5
+        )
+        self.preferred_advertisement_age = self.__create_weight_spinbox(
+            weights_layout, "Preferred Advertisement Age:", 0, 17800.0, 1, 0, 0
+        )
 
         weights_widget = QWidget()
         weights_widget.setLayout(weights_layout)
@@ -106,7 +151,7 @@ class AnalyzeWidget(QWidget):
 
         filters_layout.addWidget(QLabel("Graph Settings"))
         filters_layout.addWidget(QLabel("Regression Algorithm:"))
-        
+
         self.regression_algorithm_dropdown = QComboBox()
         self.regression_algorithm_dropdown.addItem("Linear", "linear")
         self.regression_algorithm_dropdown.addItem("Exponential", "exponential")
@@ -120,11 +165,22 @@ class AnalyzeWidget(QWidget):
 
         filters_widget = QWidget()
         filters_widget.setLayout(filters_layout)
-        filters_widget.setSizePolicy(filters_widget.sizePolicy().horizontalPolicy(), QSizePolicy.Fixed)
+        filters_widget.setSizePolicy(
+            filters_widget.sizePolicy().horizontalPolicy(), QSizePolicy.Fixed
+        )
 
         return filters_widget
 
-    def __create_weight_spinbox(self, parent: QGridLayout, label, min_value, max_value, step, decimals, default_value) -> QDoubleSpinBox:
+    def __create_weight_spinbox(
+        self,
+        parent: QGridLayout,
+        label,
+        min_value,
+        max_value,
+        step,
+        decimals,
+        default_value,
+    ) -> QDoubleSpinBox:
         parent.addWidget(QLabel(label), parent.rowCount(), 0)
         spinbox = QDoubleSpinBox()
         spinbox.setRange(min_value, max_value)
@@ -134,7 +190,9 @@ class AnalyzeWidget(QWidget):
         parent.addWidget(spinbox, parent.rowCount() - 1, 1)
         return spinbox
 
-    def __create_table(self, label: str, columns: list[str]) -> tuple[QTableWidget, QWidget]:
+    def __create_table(
+        self, label: str, columns: list[str]
+    ) -> tuple[QTableWidget, QWidget]:
         table_layout = QVBoxLayout()
         table_layout.addWidget(QLabel(label))
 
@@ -157,8 +215,12 @@ class AnalyzeWidget(QWidget):
         self.age_weight.valueChanged.connect(scored_cars_changed_action)
         self.preferred_age.valueChanged.connect(scored_cars_changed_action)
         self.advertisement_age_weight.valueChanged.connect(scored_cars_changed_action)
-        self.preferred_advertisement_age.valueChanged.connect(scored_cars_changed_action)
-        self.regression_algorithm_dropdown.currentIndexChanged.connect(self.set_scored_cars_action)
+        self.preferred_advertisement_age.valueChanged.connect(
+            scored_cars_changed_action
+        )
+        self.regression_algorithm_dropdown.currentIndexChanged.connect(
+            self.set_scored_cars_action
+        )
 
     def set_date_grouped_cars(self, date_changed_action: object):
         self.date_dropdown.currentIndexChanged.connect(date_changed_action)
@@ -185,24 +247,27 @@ class AnalyzeWidget(QWidget):
             return
 
         searches_date = [
-            search for search in self.searches
-            if search.name == selected_search_name
+            search for search in self.searches if search.name == selected_search_name
         ]
-        
+
         logger.debug(f"Setting {selected_search_id=} {searches_date=}")
-        
+
         for search in searches_date:
-            self.date_dropdown.addItem(f"{search.date} ({search.amount_of_cars} cars)", search.id)
+            self.date_dropdown.addItem(
+                f"{search.date} ({search.amount_of_cars} cars)", search.id
+            )
         self.date_dropdown.setEnabled(True)
-    
+
     def get_selected_search_id(self) -> int:
         return self.date_dropdown.currentData()
-    
+
     def get_search_parameters(self) -> dict:
         selected_cars = []
 
         for row in range(self.grouped_cars_table.rowCount()):
-            checkbox = self.grouped_cars_table.cellWidget(row, 0)  # Get the checkbox widget
+            checkbox = self.grouped_cars_table.cellWidget(
+                row, 0
+            )  # Get the checkbox widget
             if checkbox and checkbox.isChecked():  # Check if the checkbox is selected
                 manufacturer = self.grouped_cars_table.item(row, 1).text()
                 model = self.grouped_cars_table.item(row, 2).text()
@@ -220,7 +285,7 @@ class AnalyzeWidget(QWidget):
             "weight_advertisement_age": self.advertisement_age_weight.value(),
             "preferred_advertisement_age": self.preferred_advertisement_age.value(),
             "filter_by_manufacturers": filter_by_manufacturers,
-            "filter_by_models": filter_by_models
+            "filter_by_models": filter_by_models,
         }
 
     def set_scored_cars(self, scored_cars: list[ScoredCar]):
@@ -232,13 +297,25 @@ class AnalyzeWidget(QWidget):
             car = scored_car.car
             self.scored_cars_table.setItem(row, 0, QTableWidgetItem(car.manufacturer))
             self.scored_cars_table.setItem(row, 1, QTableWidgetItem(car.model))
-            self.scored_cars_table.setItem(row, 2, QTableWidgetItem(f"{car.price:,}".replace(",", ".") + " €"))
-            self.scored_cars_table.setItem(row, 3, QTableWidgetItem(f"{car.mileage:,}".replace(",", ".") + "km"))
-            self.scored_cars_table.setItem(row, 4, QTableWidgetItem(f"{car.horse_power} HP"))
+            self.scored_cars_table.setItem(
+                row, 2, QTableWidgetItem(f"{car.price:,}".replace(",", ".") + " €")
+            )
+            self.scored_cars_table.setItem(
+                row, 3, QTableWidgetItem(f"{car.mileage:,}".replace(",", ".") + "km")
+            )
+            self.scored_cars_table.setItem(
+                row, 4, QTableWidgetItem(f"{car.horse_power} HP")
+            )
             self.scored_cars_table.setItem(row, 5, QTableWidgetItem(car.fuel_type))
-            self.scored_cars_table.setItem(row, 6, QTableWidgetItem(car.first_registration.strftime('%Y-%m-%d')))
-            self.scored_cars_table.setItem(row, 7, QTableWidgetItem(car.advertised_since.strftime('%Y-%m-%d')))
-            self.scored_cars_table.setItem(row, 8, QTableWidgetItem("Private" if car.private_seller else "Dealer"))
+            self.scored_cars_table.setItem(
+                row, 6, QTableWidgetItem(car.first_registration.strftime("%Y-%m-%d"))
+            )
+            self.scored_cars_table.setItem(
+                row, 7, QTableWidgetItem(car.advertised_since.strftime("%Y-%m-%d"))
+            )
+            self.scored_cars_table.setItem(
+                row, 8, QTableWidgetItem("Private" if car.private_seller else "Dealer")
+            )
             link_label = QLabel(f'<a href="{car.details_url}">Link</a>')
             link_label.setOpenExternalLinks(True)  # Enable clickable links
             self.scored_cars_table.setCellWidget(row, 9, link_label)
@@ -248,9 +325,9 @@ class AnalyzeWidget(QWidget):
         self.__update_scatter_plot(scored_cars)
 
     def __update_scatter_plot(self, scored_cars: list[ScoredCar]):
-        if (not scored_cars or len(scored_cars) < 5):
+        if not scored_cars or len(scored_cars) < 5:
             return
-        
+
         # Create a scatter series for the chart
         scatter_series = QScatterSeries()
         scatter_series.setName("Cars")
@@ -289,7 +366,9 @@ class AnalyzeWidget(QWidget):
             self.chart.addAxis(axis_y, Qt.AlignLeft)
             scatter_series.attachAxis(axis_y)
 
-        x_curve, y_curve = regression.regression_line(scored_cars, self.regression_algorithm_dropdown.currentData())
+        x_curve, y_curve = regression.regression_line(
+            scored_cars, self.regression_algorithm_dropdown.currentData()
+        )
 
         regression_series = QLineSeries()
         for x, y in zip(x_curve, y_curve):
@@ -310,13 +389,51 @@ class AnalyzeWidget(QWidget):
             checkbox.setCheckState(Qt.Unchecked)
             checkbox.stateChanged.connect(self.set_scored_cars_action)
             self.grouped_cars_table.setCellWidget(row, 0, checkbox)
-            self.grouped_cars_table.setItem(row, 1, QTableWidgetItem(grouped_car.manufacturer))
+            self.grouped_cars_table.setItem(
+                row, 1, QTableWidgetItem(grouped_car.manufacturer)
+            )
             self.grouped_cars_table.setItem(row, 2, QTableWidgetItem(grouped_car.model))
-            self.grouped_cars_table.setItem(row, 3, QTableWidgetItem(f"{grouped_car.count}"))
-            self.grouped_cars_table.setItem(row, 4, QTableWidgetItem(f"{round(grouped_car.average_price):,}".replace(",", ".") + " €"))
-            self.grouped_cars_table.setItem(row, 5, QTableWidgetItem(f"{round(grouped_car.average_mileage):,}".replace(",", ".") + " km"))
-            self.grouped_cars_table.setItem(row, 6, QTableWidgetItem(f"{round(grouped_car.average_horse_power):,}".replace(",", ".") + " HP"))
-            self.grouped_cars_table.setItem(row, 7, QTableWidgetItem(f"{round(grouped_car.average_age):,}".replace(",", ".") + " days"))
-            self.grouped_cars_table.setItem(row, 8, QTableWidgetItem(f"{round(grouped_car.average_advertisement_age):,}".replace(",", ".") + " days"))
+            self.grouped_cars_table.setItem(
+                row, 3, QTableWidgetItem(f"{grouped_car.count}")
+            )
+            self.grouped_cars_table.setItem(
+                row,
+                4,
+                QTableWidgetItem(
+                    f"{round(grouped_car.average_price):,}".replace(",", ".") + " €"
+                ),
+            )
+            self.grouped_cars_table.setItem(
+                row,
+                5,
+                QTableWidgetItem(
+                    f"{round(grouped_car.average_mileage):,}".replace(",", ".") + " km"
+                ),
+            )
+            self.grouped_cars_table.setItem(
+                row,
+                6,
+                QTableWidgetItem(
+                    f"{round(grouped_car.average_horse_power):,}".replace(",", ".")
+                    + " HP"
+                ),
+            )
+            self.grouped_cars_table.setItem(
+                row,
+                7,
+                QTableWidgetItem(
+                    f"{round(grouped_car.average_age):,}".replace(",", ".") + " days"
+                ),
+            )
+            self.grouped_cars_table.setItem(
+                row,
+                8,
+                QTableWidgetItem(
+                    f"{round(grouped_car.average_advertisement_age):,}".replace(
+                        ",", "."
+                    )
+                    + " days"
+                ),
+            )
 
         self.grouped_cars_table.resizeColumnsToContents()
