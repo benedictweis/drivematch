@@ -7,3 +7,4 @@
 - use sqlmodel from fastapi
 - write tests
 - ruff
+- mypy

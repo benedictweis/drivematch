@@ -27,6 +27,7 @@ drivematch = { path = "../../" }
 
 [dependency-groups]
 dev = [
+    "mypy>=1.17.1",
     "pyinstaller>=6.15.0",
     "ruff>=0.12.11",
 ]
