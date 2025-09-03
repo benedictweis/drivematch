@@ -21,7 +21,9 @@ def group_by[T](
     return grouped
 
 
-def normalize(value, min_value, max_value, epsilon=1e-10):
+def normalize(
+    value: float, min_value: float, max_value: float, epsilon: float = 1e-10
+) -> float:
     if min_value == max_value:
         return 1.0
     return (value - min_value + epsilon) / (max_value - min_value + epsilon)
@@ -64,7 +66,7 @@ class CarsAnalyzer:
         grouped_cars.sort(key=lambda x: x.count, reverse=True)
         return grouped_cars
 
-    def set_weights_and_filters(
+    def set_weights_and_filters(  # noqa: PLR0913
         self,
         weight_hp: float,
         weight_price: float,
@@ -75,7 +77,7 @@ class CarsAnalyzer:
         preferred_advertisement_age: float,
         filter_by_manufacturers: list[str],
         filter_by_models: list[str],
-    ):
+    ) -> None:
         self.weight_hp = weight_hp
         self.weight_price = weight_price
         self.weight_mileage = weight_mileage

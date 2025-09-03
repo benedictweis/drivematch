@@ -143,10 +143,7 @@ class MobileDeScraper(CarsScraper):
         details_url = f"https://suchen.mobile.de{link_element.get('href')}"
 
         img = link_element.find(lambda tag: tag.name == "img")
-        if img is None:
-            image_url = ""
-        else:
-            image_url = img.get("src")
+        image_url = "" if img is None else img.get("src")
 
         last_div = link_element.find_all("div", recursive=False)[-1]
         first_div_inside_last = last_div.find("div")
@@ -159,6 +156,7 @@ class MobileDeScraper(CarsScraper):
 
         return Car(
             id=car_id,
+            timestamp=datetime.now(),
             manufacturer=make,
             model=model,
             description=description,

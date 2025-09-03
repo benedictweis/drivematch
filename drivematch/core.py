@@ -31,7 +31,7 @@ class DriveMatchService:
             cars,
         )
 
-    def get_scores( # noqa: PLR0913
+    def get_scores(  # noqa: PLR0913
         self,
         search_id: str,
         weight_horsepower: float,

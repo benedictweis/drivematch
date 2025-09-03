@@ -1,6 +1,6 @@
 import pytest
 
-from drivematch.scraping import MobileDeScraper
+from drivematch._internal.scraping import MobileDeScraper
 
 
 @pytest.mark.component
