@@ -78,38 +78,41 @@ wheels = [
 
 [[package]]
 name = "drivematch"
-version = "0.5.6"
+version = "0.6.2"
 source = { directory = "../../" }
 dependencies = [
     { name = "bs4" },
+    { name = "numpy" },
     { name = "pydantic" },
+    { name = "scipy" },
     { name = "selenium" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "bs4", specifier = ">=0.0.2" },
+    { name = "numpy", specifier = ">=2.3.2" },
     { name = "pydantic", specifier = ">=2.11.7" },
+    { name = "scipy", specifier = ">=1.16.1" },
     { name = "selenium", specifier = ">=4.35.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "pytest", specifier = ">=8.4.1" },
+    { name = "pytest-cov", specifier = ">=6.2.1" },
     { name = "ruff", specifier = ">=0.12.11" },
     { name = "ty", specifier = ">=0.0.1a19" },
 ]
 
 [[package]]
 name = "drivematch-desktop"
-version = "0.1.0"
+version = "0.6.2"
 source = { editable = "." }
 dependencies = [
     { name = "drivematch" },
-    { name = "numpy" },
     { name = "platformdirs" },
     { name = "pyside6" },
-    { name = "scipy" },
 ]
 
 [package.dev-dependencies]
@@ -122,10 +125,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "drivematch", directory = "../../" },
-    { name = "numpy", specifier = ">=2.2.5,<3.0.0" },
     { name = "platformdirs", specifier = ">=4.3.8,<5.0.0" },
     { name = "pyside6", specifier = ">=6.9.0,<7.0.0" },
-    { name = "scipy", specifier = ">=1.15.2,<2.0.0" },
 ]
 
 [package.metadata.requires-dev]

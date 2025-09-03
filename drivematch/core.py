@@ -1,10 +1,15 @@
+import datetime
 import logging
 import uuid
 
 from drivematch._internal.analysis import CarsAnalyzer
 from drivematch._internal.db import Search, SearchesRepository, SQLiteSearchesRepository
 from drivematch._internal.scraping import CarsScraper, MobileDeScraper
-from drivematch.types import GroupedCarsByManufacturerAndModel, ScoredCar
+from drivematch.types import (
+    GroupedCarsByManufacturerAndModel,
+    RegressionFunctionType,
+    ScoredCar,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +77,14 @@ class DriveMatchService:
     def get_searches(self) -> list[Search]:
         logger.info("Getting searches")
         return self.searches_repository.get_searches()
+
+    def get_regression_line(
+        self, search_id: str, function_type: RegressionFunctionType
+    ) -> tuple[list[datetime.datetime], list[float]]:
+        logger.info("Getting regression line for search search_id=%s", search_id)
+        cars = self.searches_repository.get_cars_for_search(search_id)
+        self.cars_analyzer.set_cars(cars)
+        return self.cars_analyzer.get_regression_line(function_type)
 
 
 def create_default_drivematch_service(db_path: str) -> DriveMatchService:

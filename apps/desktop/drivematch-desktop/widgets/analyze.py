@@ -1,3 +1,4 @@
+from collections.abc import Callable
 import logging
 
 from PySide6.QtCharts import (
@@ -22,9 +23,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from utils.regression import regression_line
-from drivematch.types import GroupedCarsByManufacturerAndModel, ScoredCar, Search
+from drivematch.types import (
+    GroupedCarsByManufacturerAndModel,
+    RegressionFunctionType,
+    ScoredCar,
+    Search,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +47,11 @@ class AnalyzeWidget(QWidget):
     preferred_advertisement_age: QDoubleSpinBox
     chart: QChart
     searches: list[Search]
-    set_scored_cars_action: object
-    set_grouped_cars_action: object
+    get_regression_line: Callable
+    set_scored_cars_action: Callable
+    set_grouped_cars_action: Callable
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         analyze_layout = QGridLayout()
 
@@ -197,13 +202,8 @@ class AnalyzeWidget(QWidget):
         filters_layout.addWidget(QLabel("Regression Algorithm:"))
 
         self.regression_algorithm_dropdown = QComboBox()
-        self.regression_algorithm_dropdown.addItem("Linear", "linear")
-        self.regression_algorithm_dropdown.addItem("Exponential", "exponential")
-        self.regression_algorithm_dropdown.addItem("Power Law", "power_law")
-        self.regression_algorithm_dropdown.addItem("Logarithmic", "logarithmic")
-        self.regression_algorithm_dropdown.addItem("Polynomial 2", "polynomial_2")
-        self.regression_algorithm_dropdown.addItem("Polynomial 3", "polynomial_3")
-        self.regression_algorithm_dropdown.addItem("Polynomial 4", "polynomial_4")
+        for algorithm in RegressionFunctionType:
+            self.regression_algorithm_dropdown.addItem(algorithm.value, algorithm)
         self.regression_algorithm_dropdown.setCurrentIndex(3)
         filters_layout.addWidget(self.regression_algorithm_dropdown)
 
@@ -389,6 +389,9 @@ class AnalyzeWidget(QWidget):
 
         self.__update_scatter_plot(scored_cars)
 
+    def set_regression_line_callback(self, callback: Callable) -> None:
+        self.get_regression_line = callback
+
     def __update_scatter_plot(self, scored_cars: list[ScoredCar]):
         if not scored_cars or len(scored_cars) < 5:
             return
@@ -431,8 +434,7 @@ class AnalyzeWidget(QWidget):
             self.chart.addAxis(axis_y, Qt.AlignLeft)
             scatter_series.attachAxis(axis_y)
 
-        x_curve, y_curve = regression_line(
-            scored_cars,
+        x_curve, y_curve = self.get_regression_line(
             self.regression_algorithm_dropdown.currentData(),
         )
 

@@ -12,7 +12,6 @@ from drivematch.types import Car
 
 firefox_options = Options()
 firefox_options.add_argument("--window-size=1920,1080")
-# firefox_options.add_argument("--headless")
 
 
 def get_text_from_tag(input_tag: Tag) -> str:
@@ -43,13 +42,6 @@ class MobileDeScraper(CarsScraper):
         driver.delete_all_cookies()
         driver.get(url)
         soups = []
-        # nav_element = driver.find_element(
-        #    By.CSS_SELECTOR, "nav[aria-label='Weitere Angebote']"
-        # )
-        # second_to_last_li = nav_element.find_elements(
-        #    By.CSS_SELECTOR, "ul > li"
-        # )[-2]
-        # _ = float(second_to_last_li.text.strip())
         time.sleep(random.uniform(1, 2))
         consent_button = driver.find_element(
             By.CLASS_NAME,

@@ -3,6 +3,7 @@ import os
 import sys
 from urllib.parse import urlparse
 
+from drivematch.types import RegressionFunctionType
 import platformdirs
 from PySide6.QtWidgets import (
     QApplication,
@@ -42,6 +43,7 @@ class DriveMatchDialog(QDialog):
         tab_widget.addTab(self.scrape_widget, "Scrape")
 
         self.analyze_widget = AnalyzeWidget(tab_widget)
+        self.analyze_widget.set_regression_line_callback(self.get_regression_line)
         self.analyze_widget.set_scored_cars_action(self.set_scored_cars)
         self.analyze_widget.set_grouped_cars_action(self.set_grouped_cars)
         tab_widget.addTab(self.analyze_widget, "Analyze")
@@ -51,7 +53,7 @@ class DriveMatchDialog(QDialog):
 
         self.set_searches()
 
-    def scrape(self):
+    def scrape(self) -> None:
         name = self.scrape_widget.get_name_text()
         url = self.scrape_widget.get_url_text()
 
@@ -73,11 +75,11 @@ class DriveMatchDialog(QDialog):
 
         self.set_searches()
 
-    def set_searches(self):
+    def set_searches(self) -> None:
         searches = self.drive_match_service.get_searches()
         self.analyze_widget.set_searches(searches)
 
-    def set_scored_cars(self):
+    def set_scored_cars(self) -> None:
         selected_search_id = self.analyze_widget.get_selected_search_id()
         if selected_search_id is None:
             logger.info("Got invalid selected search: %s", selected_search_id)
@@ -99,8 +101,20 @@ class DriveMatchDialog(QDialog):
         grouped_cars = self.drive_match_service.get_groups(selected_search_id)
         self.analyze_widget.set_grouped_cars(grouped_cars)
 
+    def get_regression_line(
+        self, function_type: RegressionFunctionType
+    ) -> tuple[list[float], list[float]]:
+        selected_search_id = self.analyze_widget.get_selected_search_id()
+        if selected_search_id is None:
+            logger.info("Got invalid selected search: %s", selected_search_id)
+            show_error_message("Please select a search.")
+            return [], []
+        return self.drive_match_service.get_regression_line(
+            selected_search_id, function_type
+        )
 
-def main():
+
+def main() -> None:
     app = QApplication()
     logging.basicConfig(
         format="%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s",

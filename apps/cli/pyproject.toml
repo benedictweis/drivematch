@@ -1,16 +1,13 @@
 [project]
 name = "drivematch-cli"
-version = "0.1.0"
+version = "0.6.1"
 description = ""
 authors = [
     { name = "Benedict Weis", email = "47110382+benedictweis@users.noreply.github.com" },
 ]
 requires-python = ">=3.13,<3.14"
 license = { text = "Apache 2.0" }
-dependencies = [
-    "drivematch",
-    "typer (>=0.15.2,<0.16.0)",
-]
+dependencies = ["drivematch", "typer (>=0.15.2,<0.16.0)"]
 
 [build-system]
 requires = ["hatchling"]
@@ -23,6 +20,4 @@ packages = ["drivematch-desktop"]
 drivematch = { path = "../../" }
 
 [dependency-groups]
-dev = [
-    "pyinstaller>=6.15.0",
-]
+dev = ["pyinstaller>=6.15.0"]

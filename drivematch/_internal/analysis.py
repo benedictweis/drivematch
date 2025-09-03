@@ -1,7 +1,15 @@
+import datetime
 from collections.abc import Callable
-from datetime import datetime
 
-from drivematch.types import Car, GroupedCarsByManufacturerAndModel, ScoredCar
+import numpy as np
+import scipy.optimize
+
+from drivematch.types import (
+    Car,
+    GroupedCarsByManufacturerAndModel,
+    RegressionFunctionType,
+    ScoredCar,
+)
 
 
 def group_by[T](
@@ -44,10 +52,10 @@ class CarsAnalyzer:
             and car1.model == car2.model,
         ):
             average_age = sum(
-                (datetime.now() - car.first_registration).days for car in group
+                (datetime.datetime.now() - car.first_registration).days for car in group
             ) / len(group)
             average_advertisement_age = sum(
-                (datetime.now() - car.advertised_since).days for car in group
+                (datetime.datetime.now() - car.advertised_since).days for car in group
             ) / len(group)
             grouped_cars_entry = GroupedCarsByManufacturerAndModel(
                 manufacturer=group[0].manufacturer,
@@ -98,16 +106,16 @@ class CarsAnalyzer:
         self.min_mileage = min(car.mileage for car in self.cars)
         self.max_mileage = max(car.mileage for car in self.cars)
         self.min_age = min(
-            (datetime.now() - car.first_registration).days for car in self.cars
+            (datetime.datetime.now() - car.first_registration).days for car in self.cars
         )
         self.max_age = max(
-            (datetime.now() - car.first_registration).days for car in self.cars
+            (datetime.datetime.now() - car.first_registration).days for car in self.cars
         )
         self.min_advertisement_age = min(
-            (datetime.now() - car.advertised_since).days for car in self.cars
+            (datetime.datetime.now() - car.advertised_since).days for car in self.cars
         )
         self.max_advertisement_age = max(
-            (datetime.now() - car.advertised_since).days for car in self.cars
+            (datetime.datetime.now() - car.advertised_since).days for car in self.cars
         )
 
         scored_cars = [ScoredCar(car=car, score=self.score(car)) for car in self.cars]
@@ -122,10 +130,10 @@ class CarsAnalyzer:
         return scored_cars
 
     def score(self, car: Car) -> float:
-        age = (datetime.now() - car.first_registration).days
+        age = (datetime.datetime.now() - car.first_registration).days
         age = abs(age - self.preferred_age)
 
-        advertisement_age = (datetime.now() - car.advertised_since).days
+        advertisement_age = (datetime.datetime.now() - car.advertised_since).days
         advertisement_age = abs(
             advertisement_age - self.preferred_advertisement_age,
         )
@@ -151,3 +159,32 @@ class CarsAnalyzer:
             + (normalized_age * self.weight_age)
             + (normalized_advertisement_age * self.weight_advertisement_age)
         )
+
+    def get_regression_line(
+        self,
+        function_type: RegressionFunctionType,
+    ) -> tuple[list[datetime.datetime], list[float]]:
+        today = datetime.datetime.now()
+
+        # Prepare data for regression
+        x_data = np.array(
+            [(today - car.first_registration).days / 365.25 for car in self.cars],
+        )
+        y_data = np.array([car.price for car in self.cars])
+
+        if len(x_data) <= 1:
+            return [], []
+
+        depreciation_function = function_type.function
+
+        params, _ = scipy.optimize.curve_fit(depreciation_function, x_data, y_data)
+
+        # Generate points for the regression curve
+        x_curve = np.linspace(x_data.min(), x_data.max(), 500)
+        y_curve = np.array(
+            [depreciation_function(x_point, *params) for x_point in x_curve]
+        )
+        x_curve = np.array(
+            [today - datetime.timedelta(days=x * 365.25) for x in x_curve]
+        )
+        return x_curve, y_curve

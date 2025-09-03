@@ -1,6 +1,10 @@
 import datetime
+from collections.abc import Callable
+from enum import Enum
 
 from pydantic import BaseModel
+
+from drivematch._internal import regression_functions
 
 
 class Search(BaseModel):
@@ -44,3 +48,36 @@ class GroupedCarsByManufacturerAndModel(BaseModel):
     average_age: float
     average_advertisement_age: float
     cars: list[Car]
+
+
+class RegressionFunctionType(Enum):
+    LINEAR = ("Linear", regression_functions.linear_depreciation)
+    EXPONENTIAL = (
+        "Exponential",
+        regression_functions.exponential_depreciation,
+    )
+    POWER_LAW = ("Power Law", regression_functions.power_law_depreciation)
+    LOGARITHMIC = (
+        "Logarithmic",
+        regression_functions.logarithmic_depreciation,
+    )
+    POLYNOMIAL_2 = (
+        "Polynomial 2",
+        regression_functions.polynomial_2_depreciation,
+    )
+    POLYNOMIAL_3 = (
+        "Polynomial 3",
+        regression_functions.polynomial_3_depreciation,
+    )
+    POLYNOMIAL_4 = (
+        "Polynomial 4",
+        regression_functions.polynomial_4_depreciation,
+    )
+
+    function: Callable
+
+    def __new__(cls, value: str, function: Callable) -> object:
+        obj = object.__new__(cls)
+        obj._value_ = value
+        obj.function = function
+        return obj
