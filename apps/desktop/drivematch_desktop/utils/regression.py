@@ -1,12 +1,14 @@
 import datetime
 
 import numpy as np
-from drivematch.types import ScoredCar
 from scipy.optimize import curve_fit
+
+from drivematch.types import ScoredCar
 
 
 def regression_line(
-    scored_cars: list[ScoredCar], function_type: str
+    scored_cars: list[ScoredCar],
+    function_type: str,
 ) -> tuple[list[datetime.datetime], list[float]]:
     today = datetime.datetime.now()
 
@@ -15,12 +17,12 @@ def regression_line(
         [
             (today - scored_car.car.first_registration).days / 365.25
             for scored_car in scored_cars
-        ]
+        ],
     )
     y_data = np.array([scored_car.car.price for scored_car in scored_cars])
 
     if len(x_data) <= 1:
-        return
+        return None
 
     # Define multiple depreciation functions for flexibility
     def linear_depreciation(x, a, b):

@@ -8,7 +8,11 @@ authors = [
 requires-python = ">=3.13,<3.14"
 readme = "README.md"
 license = { text = "Apache 2.0" }
-dependencies = ["bs4>=0.0.2", "pydantic>=2.11.7", "selenium>=4.35.0"]
+dependencies = [
+    "bs4>=0.0.2",
+    "pydantic>=2.11.7",
+    "selenium>=4.35.0",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -18,7 +22,7 @@ build-backend = "hatchling.build"
 packages = ["drivematch"]
 
 [dependency-groups]
-dev = ["pytest>=8.4.1"]
+dev = ["pytest>=8.4.1", "ruff>=0.12.11", "ty>=0.0.1a19"]
 
 [tool.pytest.ini_options]
 markers = [
@@ -26,3 +30,4 @@ markers = [
     "component: marks a test as a component test",
     "integration: marks a test as an integration test",
 ]
+testpaths = ["tests"]

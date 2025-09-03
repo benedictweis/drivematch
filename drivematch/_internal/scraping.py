@@ -1,14 +1,14 @@
-from datetime import datetime
 import random
 import time
+from abc import ABC, abstractmethod
+from datetime import datetime
 
 from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
-from abc import ABC, abstractmethod
 
-from ..types import Car
+from drivematch.types import Car
 
 firefox_options = Options()
 firefox_options.add_argument("--window-size=1920,1080")
@@ -43,16 +43,17 @@ class MobileDeScraper(CarsScraper):
         driver.delete_all_cookies()
         driver.get(url)
         soups = []
-        #nav_element = driver.find_element(
+        # nav_element = driver.find_element(
         #    By.CSS_SELECTOR, "nav[aria-label='Weitere Angebote']"
-        #)
-        #second_to_last_li = nav_element.find_elements(
+        # )
+        # second_to_last_li = nav_element.find_elements(
         #    By.CSS_SELECTOR, "ul > li"
-        #)[-2]
-        #_ = float(second_to_last_li.text.strip())
+        # )[-2]
+        # _ = float(second_to_last_li.text.strip())
         time.sleep(random.uniform(1, 2))
         consent_button = driver.find_element(
-            By.CLASS_NAME, "mde-consent-accept-btn"
+            By.CLASS_NAME,
+            "mde-consent-accept-btn",
         )
         consent_button.click()
         time.sleep(random.uniform(1, 2))
@@ -60,7 +61,8 @@ class MobileDeScraper(CarsScraper):
             try:
                 soups.append(BeautifulSoup(driver.page_source, "html.parser"))
                 next_page = driver.find_element(
-                    By.CSS_SELECTOR, "button[aria-label='Weiter']"
+                    By.CSS_SELECTOR,
+                    "button[aria-label='Weiter']",
                 )
                 next_page.click()
                 time.sleep(random.uniform(3, 5))
@@ -71,10 +73,7 @@ class MobileDeScraper(CarsScraper):
 
     def __get_cars_from_soup(self, soup: BeautifulSoup) -> list[Car]:
         links = soup.select(
-            (
-                "article > section > div > div > "
-                "a[href^='/fahrzeuge/details.html?']"
-            )
+            "article > section > div > div > a[href^='/fahrzeuge/details.html?']",
         )
         cars = [self.__parse_car_details(link) for link in links]
         return cars
@@ -83,7 +82,7 @@ class MobileDeScraper(CarsScraper):
         info_spans = link_element.find_all(
             lambda tag: tag.name == "span"
             and tag.get_text(strip=True) != "Gesponsert"
-            and tag.get_text(strip=True) != "NEU"
+            and tag.get_text(strip=True) != "NEU",
         )
         infos = [get_text_from_tag(span) for span in info_spans]
 
@@ -95,25 +94,24 @@ class MobileDeScraper(CarsScraper):
             description = ""
         except ValueError:
             price = int(
-                infos[2].replace("€", "")
-                .replace(".", "")
-                .replace("¹", "")
-                .strip()
+                infos[2].replace("€", "").replace(".", "").replace("¹", "").strip(),
             )
             description = infos[1]
 
         online_since_div = link_element.find(
             lambda tag: tag.name == "div"
-            and tag.get_text(strip=True).startswith("Inserat online seit")
+            and tag.get_text(strip=True).startswith("Inserat online seit"),
         )
         if online_since_div is None:
             advertised_since = datetime.now()
         else:
-            online_since_text = get_text_from_tag(online_since_div).strip("Inserat online seit ")
+            online_since_text = get_text_from_tag(online_since_div).strip(
+                "Inserat online seit "
+            )
             advertised_since = datetime.strptime(online_since_text, "%d.%m.%Y, %H:%M")
 
         additional_infos = get_text_from_tag(
-            link_element.select_one("div > section > div > div")
+            link_element.select_one("div > section > div > div"),
         ).split("•")
         additional_infos = [sanitize_string(info) for info in additional_infos]
 
@@ -125,31 +123,24 @@ class MobileDeScraper(CarsScraper):
 
         for info in additional_infos:
             if info.startswith("EZ "):
-                first_registration = datetime.strptime(info.
-                                                       split(" ")[1], "%m/%Y")
+                first_registration = datetime.strptime(info.split(" ")[1], "%m/%Y")
             elif "km" in info:
-                mileage = int(info
-                              .split(" ")[0]
-                              .replace(".", "")
-                              .replace("km", ""))
+                mileage = int(info.split(" ")[0].replace(".", "").replace("km", ""))
             elif "PS" in info:
                 horse_power = int(
                     info.split("(")[1]
                     .split(" ")[0]
                     .replace("PS", "")
                     .replace(")", "")
-                    .replace(".", "")
+                    .replace(".", ""),
                 )
-            elif info in ["Benzin",
-                          "Diesel",
-                          "Elektro",
-                          "Hybrid (Benzin/Elektro)"]:
+            elif info in ["Benzin", "Diesel", "Elektro", "Hybrid (Benzin/Elektro)"]:
                 fuel_type = info
             else:
                 attributes.append(info)
 
         car_id = link_element.get("href").split("id=")[1].split("&")[0]
-        details_url = f'https://suchen.mobile.de{link_element.get("href")}'
+        details_url = f"https://suchen.mobile.de{link_element.get('href')}"
 
         img = link_element.find(lambda tag: tag.name == "img")
         if img is None:
@@ -164,7 +155,7 @@ class MobileDeScraper(CarsScraper):
         private_seller = False
 
         if "Privatanbieter" in seller_info:
-            private_seller = True 
+            private_seller = True
 
         return Car(
             id=car_id,

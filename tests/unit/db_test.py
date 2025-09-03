@@ -1,12 +1,13 @@
-import pytest
 from datetime import datetime
 
-from drivematch.car import Car
-from drivematch.db import SQLiteSearchesRepository
+import pytest
+
+from drivematch._internal.db import SQLiteSearchesRepository
+from drivematch.types import Car
 
 
 @pytest.mark.unit
-def test_should_analyze_cars_data():
+def test_should_analyze_cars_data() -> None:
     repository = SQLiteSearchesRepository(":memory:")
 
     now = datetime.now().replace(microsecond=0)
@@ -18,6 +19,7 @@ def test_should_analyze_cars_data():
     cars = [
         Car(
             id="car1",
+            timestamp=now,
             manufacturer="Toyota",
             model="Corolla",
             description="A reliable car",
@@ -30,8 +32,8 @@ def test_should_analyze_cars_data():
             advertised_since=now,
             private_seller=False,
             details_url="http://example.com/car1",
-            image_url="http://example.com/car1.jpg"
-        )
+            image_url="http://example.com/car1.jpg",
+        ),
     ]
 
     repository.insert_cars_for_search(search_id, name, url, cars)

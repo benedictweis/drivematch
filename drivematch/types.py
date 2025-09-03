@@ -3,8 +3,17 @@ import datetime
 from pydantic import BaseModel
 
 
+class Search(BaseModel):
+    id: str
+    name: str
+    url: str
+    timestamp: datetime.datetime
+    amount_of_cars: int
+
+
 class Car(BaseModel):
     id: str
+    timestamp: datetime.datetime
     manufacturer: str
     model: str
     description: str
@@ -35,11 +44,3 @@ class GroupedCarsByManufacturerAndModel(BaseModel):
     average_age: float
     average_advertisement_age: float
     cars: list[Car]
-
-
-class SearchInfo(BaseModel):
-    id: str
-    name: str
-    url: str
-    amount_of_cars: int
-    date: str

@@ -4,7 +4,6 @@ import sys
 from urllib.parse import urlparse
 
 import platformdirs
-from drivematch.core import DriveMatchService, create_default_drivematch_service
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -14,6 +13,8 @@ from PySide6.QtWidgets import (
 )
 from widgets.analyze import AnalyzeWidget
 from widgets.scrape import ScrapeWidget
+
+from drivematch.core import DriveMatchService, create_default_drivematch_service
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class DriveMatchDialog(QDialog):
 
         self.analyze_widget = AnalyzeWidget(tab_widget)
         self.analyze_widget.set_scored_cars_action(self.set_scored_cars)
-        self.analyze_widget.set_date_grouped_cars(self.set_grouped_cars)
+        self.analyze_widget.set_grouped_cars_action(self.set_grouped_cars)
         tab_widget.addTab(self.analyze_widget, "Analyze")
 
         tab_layout.addWidget(tab_widget)
@@ -84,7 +85,8 @@ class DriveMatchDialog(QDialog):
             return
         search_parameters = self.analyze_widget.get_search_parameters()
         scored_cars = self.drive_match_service.get_scores(
-            selected_search_id, **search_parameters
+            selected_search_id,
+            **search_parameters,
         )
         self.analyze_widget.set_scored_cars(scored_cars)
 
@@ -109,7 +111,9 @@ def main():
         db_path = sys.argv[1]
     else:
         data_dir = platformdirs.user_data_dir(
-            "DriveMatch", "DriveMatch", ensure_exists=True
+            "DriveMatch",
+            "DriveMatch",
+            ensure_exists=True,
         )
         db_path = os.path.join(data_dir, "drivematch.db")
 

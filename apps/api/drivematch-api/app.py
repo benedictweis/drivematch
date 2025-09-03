@@ -22,23 +22,33 @@ def scrape(scrapeRequest: ScrapeRequest):
 
 
 @app.get("/api/v2/scores")
-def scores(search_id: str,
-           weight_hp: float,
-           weight_price: float,
-           weight_mileage: float,
-           weight_age: float,
-           preferred_age: float,
-           filter_by_manufacturer: str,
-           filter_by_model: str) -> list[ScoredCar]:
+def scores(
+    search_id: str,
+    weight_hp: float,
+    weight_price: float,
+    weight_mileage: float,
+    weight_age: float,
+    preferred_age: float,
+    filter_by_manufacturer: str,
+    filter_by_model: str,
+) -> list[ScoredCar]:
     return drive_match_service.get_scores(
-        search_id, weight_hp, weight_price, weight_mileage, weight_age,
-        preferred_age, filter_by_manufacturer, filter_by_model)
+        search_id,
+        weight_hp,
+        weight_price,
+        weight_mileage,
+        weight_age,
+        preferred_age,
+        filter_by_manufacturer,
+        filter_by_model,
+    )
 
 
 @app.get("/api/v2/groups")
 def groups(search_id: str) -> list[GroupedCarsByManufacturerAndModel]:
     return drive_match_service.get_groups(search_id)
 
+
 @app.get("/api/v2/searches")
-def searches() -> list[SearchInfo]:
+def searches() -> list[Search]:
     return drive_match_service.get_searches()

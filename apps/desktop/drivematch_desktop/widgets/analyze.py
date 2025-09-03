@@ -1,7 +1,5 @@
 import logging
 
-import regression
-from drivematch.types import GroupedCarsByManufacturerAndModel, ScoredCar, SearchInfo
 from PySide6.QtCharts import (
     QChart,
     QChartView,
@@ -25,6 +23,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from utils.regression import regression_line
+from drivematch.types import GroupedCarsByManufacturerAndModel, ScoredCar, Search
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,8 +42,9 @@ class AnalyzeWidget(QWidget):
     advertisement_age_weight: QDoubleSpinBox
     preferred_advertisement_age: QDoubleSpinBox
     chart: QChart
-    searches: list[SearchInfo]
+    searches: list[Search]
     set_scored_cars_action: object
+    set_grouped_cars_action: object
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -112,7 +114,7 @@ class AnalyzeWidget(QWidget):
 
         filters_layout.addWidget(QLabel("Search:"))
         self.search_dropdown = QComboBox()
-        self.search_dropdown.currentIndexChanged.connect(self.__set_dates)
+        self.search_dropdown.activated.connect(self.__set_dates)
         filters_layout.addWidget(self.search_dropdown)
 
         filters_layout.addWidget(QLabel("Date:"))
@@ -124,25 +126,67 @@ class AnalyzeWidget(QWidget):
         weights_layout = QGridLayout()
 
         self.horsepower_weight = self.__create_weight_spinbox(
-            weights_layout, "Horsepower:", -100.0, 100.0, 0.1, 1, 1
+            weights_layout,
+            "Horsepower:",
+            -100.0,
+            100.0,
+            0.1,
+            1,
+            1,
         )
         self.price_weight = self.__create_weight_spinbox(
-            weights_layout, "Price:", -100.0, 100.0, 0.1, 1, -1
+            weights_layout,
+            "Price:",
+            -100.0,
+            100.0,
+            0.1,
+            1,
+            -1,
         )
         self.mileage_weight = self.__create_weight_spinbox(
-            weights_layout, "Mileage:", -100.0, 100.0, 0.1, 1, -1
+            weights_layout,
+            "Mileage:",
+            -100.0,
+            100.0,
+            0.1,
+            1,
+            -1,
         )
         self.age_weight = self.__create_weight_spinbox(
-            weights_layout, "Age:", -100.0, 100.0, 0.1, 1, -1
+            weights_layout,
+            "Age:",
+            -100.0,
+            100.0,
+            0.1,
+            1,
+            -1,
         )
         self.preferred_age = self.__create_weight_spinbox(
-            weights_layout, "Preferred Age:", 0, 17800.0, 1, 0, 0
+            weights_layout,
+            "Preferred Age:",
+            0,
+            17800.0,
+            1,
+            0,
+            0,
         )
         self.advertisement_age_weight = self.__create_weight_spinbox(
-            weights_layout, "Advertisement Age:", -100.0, 100.0, 0.1, 1, -0.5
+            weights_layout,
+            "Advertisement Age:",
+            -100.0,
+            100.0,
+            0.1,
+            1,
+            -0.5,
         )
         self.preferred_advertisement_age = self.__create_weight_spinbox(
-            weights_layout, "Preferred Advertisement Age:", 0, 17800.0, 1, 0, 0
+            weights_layout,
+            "Preferred Advertisement Age:",
+            0,
+            17800.0,
+            1,
+            0,
+            0,
         )
 
         weights_widget = QWidget()
@@ -166,7 +210,8 @@ class AnalyzeWidget(QWidget):
         filters_widget = QWidget()
         filters_widget.setLayout(filters_layout)
         filters_widget.setSizePolicy(
-            filters_widget.sizePolicy().horizontalPolicy(), QSizePolicy.Fixed
+            filters_widget.sizePolicy().horizontalPolicy(),
+            QSizePolicy.Fixed,
         )
 
         return filters_widget
@@ -191,7 +236,9 @@ class AnalyzeWidget(QWidget):
         return spinbox
 
     def __create_table(
-        self, label: str, columns: list[str]
+        self,
+        label: str,
+        columns: list[str],
     ) -> tuple[QTableWidget, QWidget]:
         table_layout = QVBoxLayout()
         table_layout.addWidget(QLabel(label))
@@ -208,7 +255,7 @@ class AnalyzeWidget(QWidget):
 
     def set_scored_cars_action(self, scored_cars_changed_action: object):
         self.set_scored_cars_action = scored_cars_changed_action
-        self.date_dropdown.currentIndexChanged.connect(scored_cars_changed_action)
+        self.date_dropdown.activated.connect(scored_cars_changed_action)
         self.horsepower_weight.valueChanged.connect(scored_cars_changed_action)
         self.price_weight.valueChanged.connect(scored_cars_changed_action)
         self.mileage_weight.valueChanged.connect(scored_cars_changed_action)
@@ -216,16 +263,17 @@ class AnalyzeWidget(QWidget):
         self.preferred_age.valueChanged.connect(scored_cars_changed_action)
         self.advertisement_age_weight.valueChanged.connect(scored_cars_changed_action)
         self.preferred_advertisement_age.valueChanged.connect(
-            scored_cars_changed_action
+            scored_cars_changed_action,
         )
         self.regression_algorithm_dropdown.currentIndexChanged.connect(
-            self.set_scored_cars_action
+            self.set_scored_cars_action,
         )
 
-    def set_date_grouped_cars(self, date_changed_action: object):
-        self.date_dropdown.currentIndexChanged.connect(date_changed_action)
+    def set_grouped_cars_action(self, set_grouped_cars_action: object):
+        self.set_grouped_cars_action = set_grouped_cars_action
+        self.date_dropdown.activated.connect(set_grouped_cars_action)
 
-    def set_searches(self, searches: list[SearchInfo]):
+    def set_searches(self, searches: list[Search]):
         logger.debug(f"Setting {searches=}")
         self.searches = searches
         self.search_dropdown.clear()
@@ -237,6 +285,7 @@ class AnalyzeWidget(QWidget):
         self.__set_dates()
 
     def __set_dates(self):
+        logger.info("Setting dates")
         self.date_dropdown.clear()
 
         selected_search_name = self.search_dropdown.currentText()
@@ -254,9 +303,12 @@ class AnalyzeWidget(QWidget):
 
         for search in searches_date:
             self.date_dropdown.addItem(
-                f"{search.date} ({search.amount_of_cars} cars)", search.id
+                f"{search.timestamp} ({search.amount_of_cars} cars)",
+                search.id,
             )
         self.date_dropdown.setEnabled(True)
+        self.set_scored_cars_action()
+        self.set_grouped_cars_action()
 
     def get_selected_search_id(self) -> int:
         return self.date_dropdown.currentData()
@@ -266,7 +318,8 @@ class AnalyzeWidget(QWidget):
 
         for row in range(self.grouped_cars_table.rowCount()):
             checkbox = self.grouped_cars_table.cellWidget(
-                row, 0
+                row,
+                0,
             )  # Get the checkbox widget
             if checkbox and checkbox.isChecked():  # Check if the checkbox is selected
                 manufacturer = self.grouped_cars_table.item(row, 1).text()
@@ -298,23 +351,35 @@ class AnalyzeWidget(QWidget):
             self.scored_cars_table.setItem(row, 0, QTableWidgetItem(car.manufacturer))
             self.scored_cars_table.setItem(row, 1, QTableWidgetItem(car.model))
             self.scored_cars_table.setItem(
-                row, 2, QTableWidgetItem(f"{car.price:,}".replace(",", ".") + " €")
+                row,
+                2,
+                QTableWidgetItem(f"{car.price:,}".replace(",", ".") + " €"),
             )
             self.scored_cars_table.setItem(
-                row, 3, QTableWidgetItem(f"{car.mileage:,}".replace(",", ".") + "km")
+                row,
+                3,
+                QTableWidgetItem(f"{car.mileage:,}".replace(",", ".") + "km"),
             )
             self.scored_cars_table.setItem(
-                row, 4, QTableWidgetItem(f"{car.horse_power} HP")
+                row,
+                4,
+                QTableWidgetItem(f"{car.horse_power} HP"),
             )
             self.scored_cars_table.setItem(row, 5, QTableWidgetItem(car.fuel_type))
             self.scored_cars_table.setItem(
-                row, 6, QTableWidgetItem(car.first_registration.strftime("%Y-%m-%d"))
+                row,
+                6,
+                QTableWidgetItem(car.first_registration.strftime("%Y-%m-%d")),
             )
             self.scored_cars_table.setItem(
-                row, 7, QTableWidgetItem(car.advertised_since.strftime("%Y-%m-%d"))
+                row,
+                7,
+                QTableWidgetItem(car.advertised_since.strftime("%Y-%m-%d")),
             )
             self.scored_cars_table.setItem(
-                row, 8, QTableWidgetItem("Private" if car.private_seller else "Dealer")
+                row,
+                8,
+                QTableWidgetItem("Private" if car.private_seller else "Dealer"),
             )
             link_label = QLabel(f'<a href="{car.details_url}">Link</a>')
             link_label.setOpenExternalLinks(True)  # Enable clickable links
@@ -366,12 +431,13 @@ class AnalyzeWidget(QWidget):
             self.chart.addAxis(axis_y, Qt.AlignLeft)
             scatter_series.attachAxis(axis_y)
 
-        x_curve, y_curve = regression.regression_line(
-            scored_cars, self.regression_algorithm_dropdown.currentData()
+        x_curve, y_curve = regression_line(
+            scored_cars,
+            self.regression_algorithm_dropdown.currentData(),
         )
 
         regression_series = QLineSeries()
-        for x, y in zip(x_curve, y_curve):
+        for x, y in zip(x_curve, y_curve, strict=False):
             regression_series.append(QDateTime(x).toMSecsSinceEpoch(), y)
 
         # Add the regression curve to the chart
@@ -390,24 +456,28 @@ class AnalyzeWidget(QWidget):
             checkbox.stateChanged.connect(self.set_scored_cars_action)
             self.grouped_cars_table.setCellWidget(row, 0, checkbox)
             self.grouped_cars_table.setItem(
-                row, 1, QTableWidgetItem(grouped_car.manufacturer)
+                row,
+                1,
+                QTableWidgetItem(grouped_car.manufacturer),
             )
             self.grouped_cars_table.setItem(row, 2, QTableWidgetItem(grouped_car.model))
             self.grouped_cars_table.setItem(
-                row, 3, QTableWidgetItem(f"{grouped_car.count}")
+                row,
+                3,
+                QTableWidgetItem(f"{grouped_car.count}"),
             )
             self.grouped_cars_table.setItem(
                 row,
                 4,
                 QTableWidgetItem(
-                    f"{round(grouped_car.average_price):,}".replace(",", ".") + " €"
+                    f"{round(grouped_car.average_price):,}".replace(",", ".") + " €",
                 ),
             )
             self.grouped_cars_table.setItem(
                 row,
                 5,
                 QTableWidgetItem(
-                    f"{round(grouped_car.average_mileage):,}".replace(",", ".") + " km"
+                    f"{round(grouped_car.average_mileage):,}".replace(",", ".") + " km",
                 ),
             )
             self.grouped_cars_table.setItem(
@@ -415,14 +485,14 @@ class AnalyzeWidget(QWidget):
                 6,
                 QTableWidgetItem(
                     f"{round(grouped_car.average_horse_power):,}".replace(",", ".")
-                    + " HP"
+                    + " HP",
                 ),
             )
             self.grouped_cars_table.setItem(
                 row,
                 7,
                 QTableWidgetItem(
-                    f"{round(grouped_car.average_age):,}".replace(",", ".") + " days"
+                    f"{round(grouped_car.average_age):,}".replace(",", ".") + " days",
                 ),
             )
             self.grouped_cars_table.setItem(
@@ -430,9 +500,10 @@ class AnalyzeWidget(QWidget):
                 8,
                 QTableWidgetItem(
                     f"{round(grouped_car.average_advertisement_age):,}".replace(
-                        ",", "."
+                        ",",
+                        ".",
                     )
-                    + " days"
+                    + " days",
                 ),
             )
 

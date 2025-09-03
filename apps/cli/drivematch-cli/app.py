@@ -1,4 +1,4 @@
-from typing_extensions import Annotated
+from typing import Annotated
 
 import typer
 from rich.console import Console
@@ -18,7 +18,7 @@ def search_id_matches(search_id: str):
     for search in searches:
         if search.id.startswith(search_id):
             return search.id
-    raise ValueError(f"Search with ID {search_id} not found.")               
+    raise ValueError(f"Search with ID {search_id} not found.")
 
 
 @app.command(short_help="Displays all searches")
@@ -36,28 +36,55 @@ def searches():
             search.name,
             search.url,
             str(search.amount_of_cars),
-            search.date
+            search.date,
         )
     console.print(table)
 
 
 @app.command(short_help="Scrapes a URL and saves the results under a name")
 def scrape(
-    name: Annotated[str, typer.Argument(help="The name of the search you are scraping")],
-    url: Annotated[str, typer.Argument(help="The url of the search you are scraping")]
+    name: Annotated[
+        str, typer.Argument(help="The name of the search you are scraping")
+    ],
+    url: Annotated[str, typer.Argument(help="The url of the search you are scraping")],
 ):
     drivematch_service.scrape(name, url)
 
 
 @app.command(short_help="Score the results of a search with the given weights")
-def scores(search_id: Annotated[str, typer.Option("--search-id", "-s", help="The ID of the search (first unique characters are enough)")],
-           weight_hp: Annotated[float, typer.Option(help="Weight of the horsepower of the car", min=-10.0, max=10.0)] = 1.0,
-           weight_price: Annotated[float, typer.Option(help="Weight of the price of the car", min=-10.0, max=10.0)] = -1.0,
-           weight_mileage: Annotated[float, typer.Option(help="Weight of the mileage of the car", min=-10.0, max=10.0)] = -1.0,
-           weight_age: Annotated[float, typer.Option(help="Weight of the age of the car", min=-10.0, max=10.0)] = -1.0,
-           preferred_age: Annotated[float, typer.Option(help="Preferred age of the car", min=0.0, max=17800.0)] = 0.0,
-           filter_by_manufacturer: Annotated[str, typer.Option(help="Filter inclusively by a particular manufacturer")] = "",
-           filter_by_model: Annotated[str, typer.Option(help="Filter inclusively by a particular model")] = ""):
+def scores(
+    search_id: Annotated[
+        str,
+        typer.Option(
+            "--search-id",
+            "-s",
+            help="The ID of the search (first unique characters are enough)",
+        ),
+    ],
+    weight_hp: Annotated[
+        float,
+        typer.Option(help="Weight of the horsepower of the car", min=-10.0, max=10.0),
+    ] = 1.0,
+    weight_price: Annotated[
+        float, typer.Option(help="Weight of the price of the car", min=-10.0, max=10.0)
+    ] = -1.0,
+    weight_mileage: Annotated[
+        float,
+        typer.Option(help="Weight of the mileage of the car", min=-10.0, max=10.0),
+    ] = -1.0,
+    weight_age: Annotated[
+        float, typer.Option(help="Weight of the age of the car", min=-10.0, max=10.0)
+    ] = -1.0,
+    preferred_age: Annotated[
+        float, typer.Option(help="Preferred age of the car", min=0.0, max=17800.0)
+    ] = 0.0,
+    filter_by_manufacturer: Annotated[
+        str, typer.Option(help="Filter inclusively by a particular manufacturer")
+    ] = "",
+    filter_by_model: Annotated[
+        str, typer.Option(help="Filter inclusively by a particular model")
+    ] = "",
+):
     scored_cars = drivematch_service.get_scores(
         search_id_matches(search_id),
         weight_hp,
@@ -66,7 +93,8 @@ def scores(search_id: Annotated[str, typer.Option("--search-id", "-s", help="The
         weight_age,
         preferred_age,
         filter_by_manufacturer,
-        filter_by_model)
+        filter_by_model,
+    )
     scores_table = Table(title=f"Scored Cars ({len(scored_cars)} cars)")
     scores_table.add_column("Manufacturer", justify="left", style="cyan")
     scores_table.add_column("Model", justify="left", style="magenta")
@@ -83,13 +111,22 @@ def scores(search_id: Annotated[str, typer.Option("--search-id", "-s", help="The
             scored_car.car.first_registration.strftime("%Y-%m-%d"),
             str(scored_car.car.horse_power),
             str(scored_car.car.mileage),
-            f"[link={scored_car.car.details_url}]Link[/link]"
+            f"[link={scored_car.car.details_url}]Link[/link]",
         )
     console.print(scores_table)
 
 
 @app.command(short_help="Show the groups of cars for a search")
-def groups(search_id: Annotated[str, typer.Option("--search-id", "-s", help="The ID of the search (first unique characters are enough)")]):
+def groups(
+    search_id: Annotated[
+        str,
+        typer.Option(
+            "--search-id",
+            "-s",
+            help="The ID of the search (first unique characters are enough)",
+        ),
+    ],
+):
     grouped_cars = drivematch_service.get_groups(search_id_matches(search_id))
     groups_table = Table(title=f"Grouped Cars ({len(grouped_cars)} groups)")
     groups_table.add_column("Manufacturer", justify="left", style="cyan")
@@ -107,13 +144,20 @@ def groups(search_id: Annotated[str, typer.Option("--search-id", "-s", help="The
             f"{grouped_car.average_price:.2f}",
             f"{grouped_car.average_age:.2f}",
             f"{grouped_car.average_horse_power:.2f}",
-            f"{grouped_car.average_mileage:.2f}"
+            f"{grouped_car.average_mileage:.2f}",
         )
     console.print(groups_table)
 
 
 @app.callback()
-def main(db_path: Annotated[str, typer.Option("--db-path", "-d", help="The path to the drivematch database to be used")] = "./drivematch.db"):
+def main(
+    db_path: Annotated[
+        str,
+        typer.Option(
+            "--db-path", "-d", help="The path to the drivematch database to be used"
+        ),
+    ] = "./drivematch.db",
+):
     global drivematch_service
     drivematch_service = create_default_drivematch_service(db_path)
 
