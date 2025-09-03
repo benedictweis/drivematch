@@ -12,8 +12,8 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QVBoxLayout,
 )
-from widgets.analyze import AnalyzeWidget
-from widgets.scrape import ScrapeWidget
+from drivematch_desktop.widgets.analyze import AnalyzeWidget
+from drivematch_desktop.widgets.scrape import ScrapeWidget
 
 from drivematch.core import DriveMatchService, create_default_drivematch_service
 
