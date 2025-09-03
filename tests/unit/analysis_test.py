@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 import pytest
 
@@ -10,7 +10,7 @@ from drivematch.types import Car
 def car1() -> Car:
     return Car(
         id="test_car_1",
-        timestamp=datetime.now(),
+        timestamp=datetime.datetime.now(),
         manufacturer="BMW",
         model="M3",
         description="BMW M3 test car",
@@ -18,8 +18,8 @@ def car1() -> Car:
         mileage=15000,
         horse_power=450,
         fuel_type="Petrol",
-        first_registration=datetime(2020, 1, 1),
-        advertised_since=datetime.now(),
+        first_registration=datetime.datetime(2020, 1, 1),
+        advertised_since=datetime.datetime.now(),
         private_seller=False,
         details_url="https://example.com/car1",
         image_url="https://example.com/car1.jpg",
@@ -31,7 +31,7 @@ def car1() -> Car:
 def car2() -> Car:
     return Car(
         id="test_car_2",
-        timestamp=datetime.now(),
+        timestamp=datetime.datetime.now(),
         manufacturer="BMW",
         model="M3",
         description="another BMW M3 test car",
@@ -39,8 +39,8 @@ def car2() -> Car:
         mileage=30000,
         horse_power=450,
         fuel_type="Petrol",
-        first_registration=datetime(2020, 1, 1),
-        advertised_since=datetime.now(),
+        first_registration=datetime.datetime(2020, 1, 1),
+        advertised_since=datetime.datetime.now(),
         private_seller=False,
         details_url="https://example.com/car1",
         image_url="https://example.com/car1.jpg",

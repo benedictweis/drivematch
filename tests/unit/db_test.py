@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 import pytest
 
@@ -10,7 +10,7 @@ from drivematch.types import Car
 def test_should_analyze_cars_data() -> None:
     repository = SQLiteSearchesRepository(":memory:")
 
-    now = datetime.now().replace(microsecond=0)
+    now = datetime.datetime.now().replace(microsecond=0)
     today = now.date()
 
     search_id = "search123456"

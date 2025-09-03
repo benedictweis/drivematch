@@ -1,7 +1,7 @@
 import random
 import time
 from abc import ABC, abstractmethod
-from datetime import datetime
+import datetime
 
 from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
@@ -95,12 +95,14 @@ class MobileDeScraper(CarsScraper):
             and tag.get_text(strip=True).startswith("Inserat online seit"),
         )
         if online_since_div is None:
-            advertised_since = datetime.now()
+            advertised_since = datetime.datetime.now()
         else:
             online_since_text = get_text_from_tag(online_since_div).strip(
                 "Inserat online seit "
             )
-            advertised_since = datetime.strptime(online_since_text, "%d.%m.%Y, %H:%M")
+            advertised_since = datetime.datetime.strptime(
+                online_since_text, "%d.%m.%Y, %H:%M"
+            )
 
         additional_infos = get_text_from_tag(
             link_element.select_one("div > section > div > div"),
@@ -108,14 +110,16 @@ class MobileDeScraper(CarsScraper):
         additional_infos = [sanitize_string(info) for info in additional_infos]
 
         attributes = []
-        first_registration = datetime.now()
+        first_registration = datetime.datetime.now()
         mileage = 0
         horse_power = 0
         fuel_type = ""
 
         for info in additional_infos:
             if info.startswith("EZ "):
-                first_registration = datetime.strptime(info.split(" ")[1], "%m/%Y")
+                first_registration = datetime.datetime.strptime(
+                    info.split(" ")[1], "%m/%Y"
+                )
             elif "km" in info:
                 mileage = int(info.split(" ")[0].replace(".", "").replace("km", ""))
             elif "PS" in info:
