@@ -39,16 +39,15 @@ class MobileDeScraper(CarsScraper):
 
     def __get_soups(self, url: str) -> list[BeautifulSoup]:
         driver = webdriver.Firefox(options=firefox_options)
+        driver.implicitly_wait(20)
         driver.delete_all_cookies()
         driver.get(url)
         soups = []
-        time.sleep(random.uniform(1, 2))
         consent_button = driver.find_element(
             By.CLASS_NAME,
             "mde-consent-accept-btn",
         )
         consent_button.click()
-        time.sleep(random.uniform(1, 2))
         while True:
             try:
                 soups.append(BeautifulSoup(driver.page_source, "html.parser"))
@@ -152,7 +151,7 @@ class MobileDeScraper(CarsScraper):
 
         return Car(
             id=car_id,
-            timestamp=datetime.now(),
+            timestamp=datetime.datetime.now(),
             manufacturer=make,
             model=model,
             description=description,

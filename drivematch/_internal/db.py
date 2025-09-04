@@ -42,6 +42,9 @@ class SQLiteSearchesRepository(SearchesRepository):
 
         self.connection.commit()
 
+    def __del__(self) -> None:
+        self.connection.close()
+
     def insert_cars_for_search(
         self, search_id: str, name: str, url: str, cars: list[Car]
     ) -> None:

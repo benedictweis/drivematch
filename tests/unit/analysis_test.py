@@ -3,7 +3,7 @@ import datetime
 import pytest
 
 from drivematch._internal.analysis import CarsAnalyzer
-from drivematch.types import Car
+from drivematch.types import Car, RegressionFunctionType
 
 
 @pytest.fixture
@@ -89,3 +89,21 @@ def test_should_score_cars_according_to_weights_set(car1: Car, car2: Car) -> Non
     assert scored_cars[0].car == car1
     assert scored_cars[1].car == car2
     assert scored_cars[0].score > scored_cars[1].score
+
+
+@pytest.mark.filterwarnings(
+    "ignore:Covariance of the parameters could not be estimated"
+)
+@pytest.mark.parametrize("function_type", list(RegressionFunctionType))
+def test_should_handle_all_regression_functions(
+    function_type: RegressionFunctionType, car1: Car, car2: Car
+) -> None:
+    analyzer = CarsAnalyzer()
+    analyzer.set_cars([car1, car2, car1, car2, car1, car2])
+    assert analyzer.cars == [car1, car2, car1, car2, car1, car2]
+
+    line = analyzer.get_regression_line(function_type)
+    assert line is not None
+    assert len(line[0]) > 1
+    assert len(line[1]) > 1
+    assert len(line[0]) == len(line[1])
