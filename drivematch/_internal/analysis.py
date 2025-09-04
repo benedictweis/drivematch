@@ -124,8 +124,15 @@ class CarsAnalyzer:
             scored_cars = [
                 scored_car
                 for scored_car in scored_cars
-                if scored_car.car.manufacturer in self.filter_by_manufacturers
-                and scored_car.car.model in self.filter_by_models
+                if scored_car.car.manufacturer.lower()
+                in [m.lower() for m in self.filter_by_manufacturers]
+            ]
+        if len(self.filter_by_models) > 0:
+            scored_cars = [
+                scored_car
+                for scored_car in scored_cars
+                if scored_car.car.model.lower()
+                in [m.lower() for m in self.filter_by_models]
             ]
         return scored_cars
 

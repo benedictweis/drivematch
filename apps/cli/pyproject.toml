@@ -1,20 +1,20 @@
 [project]
 name = "drivematch-cli"
-version = "0.6.1"
+version = "0.6.3"
 description = ""
 authors = [
     { name = "Benedict Weis", email = "47110382+benedictweis@users.noreply.github.com" },
 ]
 requires-python = ">=3.13,<3.14"
 license = { text = "Apache 2.0" }
-dependencies = ["drivematch", "typer (>=0.15.2,<0.16.0)"]
+dependencies = ["drivematch", "platformdirs>=4.4.0", "typer (>=0.15.2,<0.16.0)"]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["drivematch-desktop"]
+packages = ["drivematch-cli"]
 
 [tool.uv.sources]
 drivematch = { path = "../../" }
