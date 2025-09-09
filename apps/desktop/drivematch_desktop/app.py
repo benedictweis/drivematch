@@ -21,14 +21,14 @@ logger = logging.getLogger(__name__)
 
 
 class DriveMatchDialog(QDialog):
-    drive_match_service: DriveMatchService
+    drivematch_service: DriveMatchService
 
     scrape_widget: ScrapeWidget
     analyze_widget: AnalyzeWidget
 
-    def __init__(self, drive_match_service: DriveMatchService, parent=None):
+    def __init__(self, drivematch_service: DriveMatchService, parent=None):
         super().__init__(parent)
-        self.drive_match_service = drive_match_service
+        self.drivematch_service = drivematch_service
 
         self.setWindowTitle("Drive Match")
         self.setGeometry(200, 200, 1000, 600)
@@ -71,12 +71,12 @@ class DriveMatchDialog(QDialog):
         self.scrape_widget.clear_name_text()
         self.scrape_widget.clear_url_text()
 
-        self.drive_match_service.scrape(name, url)
+        self.drivematch_service.scrape(name, url)
 
         self.set_searches()
 
     def set_searches(self) -> None:
-        searches = self.drive_match_service.get_searches()
+        searches = self.drivematch_service.get_searches()
         self.analyze_widget.set_searches(searches)
 
     def set_scored_cars(self) -> None:
@@ -86,7 +86,7 @@ class DriveMatchDialog(QDialog):
             show_error_message("Please select a search.")
             return
         search_parameters = self.analyze_widget.get_search_parameters()
-        scored_cars = self.drive_match_service.get_scores(
+        scored_cars = self.drivematch_service.get_scores(
             selected_search_id,
             **search_parameters,
         )
@@ -98,7 +98,7 @@ class DriveMatchDialog(QDialog):
             logger.info("Got invalid selected search: %s", selected_search_id)
             show_error_message("Please select a search.")
             return
-        grouped_cars = self.drive_match_service.get_groups(selected_search_id)
+        grouped_cars = self.drivematch_service.get_groups(selected_search_id)
         self.analyze_widget.set_grouped_cars(grouped_cars)
 
     def get_regression_line(
@@ -109,7 +109,7 @@ class DriveMatchDialog(QDialog):
             logger.info("Got invalid selected search: %s", selected_search_id)
             show_error_message("Please select a search.")
             return [], []
-        return self.drive_match_service.get_regression_line(
+        return self.drivematch_service.get_regression_line(
             selected_search_id, function_type
         )
 
@@ -138,10 +138,10 @@ def main() -> None:
 
     logger.info("Using DriveMatch database at %s", db_path)
 
-    drive_match_service = create_default_drivematch_service(db_path)
+    drivematch_service = create_default_drivematch_service(db_path)
 
-    drive_match = DriveMatchDialog(drive_match_service)
-    drive_match.show()
+    drivematch = DriveMatchDialog(drivematch_service)
+    drivematch.show()
     app.exec()
 
 

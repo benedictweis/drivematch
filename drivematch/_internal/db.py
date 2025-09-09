@@ -91,23 +91,13 @@ class SQLiteSearchesRepository(SearchesRepository):
     def get_cars_for_search(self, search_id: str) -> list[Car]:
         self.cursor.execute(
             """
-            SELECT timestamp
-            FROM searches
-            WHERE id = ?
-        """,
-            (search_id,),
-        )
-        search_timestamp = self.cursor.fetchone()[0]
-        if search_timestamp is None:
-            raise ValueError(f"No search found with id {search_id}")
-        self.cursor.execute(
-            """
             SELECT cars.*
             FROM cars
             INNER JOIN searches_cars ON cars.id = searches_cars.car_id
-            WHERE searches_cars.search_id = ? AND cars.timestamp = ?
+            INNER JOIN searches ON searches_cars.search_id = searches.id
+            WHERE searches.id = ? AND cars.timestamp = searches.timestamp
         """,
-            (search_id, search_timestamp),
+            (search_id,),
         )
         rows = self.cursor.fetchall()
         cars = []
