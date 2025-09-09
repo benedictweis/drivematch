@@ -51,8 +51,6 @@ class DriveMatchDialog(QDialog):
         tab_layout.addWidget(tab_widget)
         main_layout.addLayout(tab_layout)
 
-        self.set_searches()
-
     def scrape(self) -> None:
         name = self.scrape_widget.get_name_text()
         url = self.scrape_widget.get_url_text()
@@ -142,6 +140,7 @@ def main() -> None:
 
     drivematch = DriveMatchDialog(drivematch_service)
     drivematch.show()
+    drivematch.set_searches()
     app.exec()
 
 
