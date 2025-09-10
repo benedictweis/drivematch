@@ -1,4 +1,3 @@
-from collections.abc import Callable
 import logging
 
 from PySide6.QtCharts import (
@@ -23,12 +22,14 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
 from drivematch.types import (
     GroupedCarsByManufacturerAndModel,
     RegressionFunctionType,
     ScoredCar,
     Search,
 )
+from drivematch_desktop.event_bus import EventBus, EventType
 
 logger = logging.getLogger(__name__)
 
@@ -47,12 +48,11 @@ class AnalyzeWidget(QWidget):
     preferred_advertisement_age: QDoubleSpinBox
     chart: QChart
     searches: list[Search]
-    get_regression_line: Callable
-    set_scored_cars_action: Callable
-    set_grouped_cars_action: Callable
+    event_bus: EventBus
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, event_bus: EventBus, parent=None) -> None:
         super().__init__(parent)
+        self.event_bus = event_bus
         analyze_layout = QGridLayout()
 
         analyze_layout.setColumnStretch(0, 1)
@@ -111,6 +111,32 @@ class AnalyzeWidget(QWidget):
         table_splitter.addWidget(grouped_cars_plot_splitter)
 
         self.setLayout(analyze_layout)
+
+        self.set_scored_cars_action = self.__publish_update_scored_cars
+        self.horsepower_weight.valueChanged.connect(self.__publish_update_scored_cars)
+        self.price_weight.valueChanged.connect(self.__publish_update_scored_cars)
+        self.mileage_weight.valueChanged.connect(self.__publish_update_scored_cars)
+        self.age_weight.valueChanged.connect(self.__publish_update_scored_cars)
+        self.preferred_age.valueChanged.connect(self.__publish_update_scored_cars)
+        self.advertisement_age_weight.valueChanged.connect(self.__publish_update_scored_cars)
+        self.preferred_advertisement_age.valueChanged.connect(
+            self.__publish_update_scored_cars,
+        )
+        self.regression_algorithm_dropdown.activated.connect(
+            self.__publish_update_scored_cars,
+        )
+
+        self.date_dropdown.activated.connect(self.__publish_update_all_values)
+
+    def __publish_update_scored_cars(self) -> None:
+        self.event_bus.publish(EventType.SCORED_CARS_REQUESTED)
+
+    def __publish_update_scored_cars_and_regression_line(self) -> None:
+        self.event_bus.publish(EventType.SCORED_CARS_AND_REGRESSION_LINE_REQUESTED)
+
+    def __publish_update_all_values(self) -> None:
+        self.event_bus.publish(EventType.SCORED_CARS_AND_REGRESSION_LINE_REQUESTED)
+        self.event_bus.publish(EventType.GROUPED_CARS_REQUESTED)
 
     def __create_filters_widget(self) -> QWidget:
         filters_layout = QVBoxLayout()
@@ -253,27 +279,7 @@ class AnalyzeWidget(QWidget):
         table_widget.setLayout(table_layout)
         return table, table_widget
 
-    def set_scored_cars_action(self, scored_cars_changed_action: object):
-        self.set_scored_cars_action = scored_cars_changed_action
-        self.date_dropdown.activated.connect(scored_cars_changed_action)
-        self.horsepower_weight.valueChanged.connect(scored_cars_changed_action)
-        self.price_weight.valueChanged.connect(scored_cars_changed_action)
-        self.mileage_weight.valueChanged.connect(scored_cars_changed_action)
-        self.age_weight.valueChanged.connect(scored_cars_changed_action)
-        self.preferred_age.valueChanged.connect(scored_cars_changed_action)
-        self.advertisement_age_weight.valueChanged.connect(scored_cars_changed_action)
-        self.preferred_advertisement_age.valueChanged.connect(
-            scored_cars_changed_action,
-        )
-        self.regression_algorithm_dropdown.currentIndexChanged.connect(
-            self.set_scored_cars_action,
-        )
-
-    def set_grouped_cars_action(self, set_grouped_cars_action: object):
-        self.set_grouped_cars_action = set_grouped_cars_action
-        self.date_dropdown.activated.connect(set_grouped_cars_action)
-
-    def set_searches(self, searches: list[Search]):
+    def set_searches(self, searches: list[Search]) -> None:
         logger.debug(f"Setting {searches=}")
         self.searches = searches
         self.search_dropdown.clear()
@@ -284,7 +290,7 @@ class AnalyzeWidget(QWidget):
 
         self.__set_dates()
 
-    def __set_dates(self):
+    def __set_dates(self) -> None:
         logger.info("Setting dates")
         self.date_dropdown.clear()
 
@@ -307,8 +313,8 @@ class AnalyzeWidget(QWidget):
                 search.id,
             )
         self.date_dropdown.setEnabled(True)
-        self.set_scored_cars_action()
-        self.set_grouped_cars_action()
+        
+        self.__publish_update_all_values()
 
     def get_selected_search_id(self) -> int:
         return self.date_dropdown.currentData()
@@ -341,7 +347,10 @@ class AnalyzeWidget(QWidget):
             "filter_by_models": filter_by_models,
         }
 
-    def set_scored_cars(self, scored_cars: list[ScoredCar]):
+    def get_function_type(self) -> RegressionFunctionType:
+        return self.regression_algorithm_dropdown.currentData()
+
+    def set_scored_cars(self, scored_cars: list[ScoredCar]) -> None:
         self.scored_cars_table.setRowCount(0)
         self.scored_cars_table.setRowCount(len(scored_cars))
 
@@ -387,12 +396,7 @@ class AnalyzeWidget(QWidget):
 
         self.scored_cars_table.resizeColumnsToContents()
 
-        self.__update_scatter_plot(scored_cars)
-
-    def set_regression_line_callback(self, callback: Callable) -> None:
-        self.get_regression_line = callback
-
-    def __update_scatter_plot(self, scored_cars: list[ScoredCar]):
+    def set_regression_line(self, scored_cars: list[ScoredCar], regression_line: tuple[list[float], list[float]]) -> None:
         if not scored_cars or len(scored_cars) < 5:
             return
 
@@ -434,9 +438,7 @@ class AnalyzeWidget(QWidget):
             self.chart.addAxis(axis_y, Qt.AlignLeft)
             scatter_series.attachAxis(axis_y)
 
-        x_curve, y_curve = self.get_regression_line(
-            self.regression_algorithm_dropdown.currentData(),
-        )
+        x_curve, y_curve = regression_line
 
         regression_series = QLineSeries()
         for x, y in zip(x_curve, y_curve, strict=False):
@@ -448,14 +450,14 @@ class AnalyzeWidget(QWidget):
         regression_series.attachAxis(self.chart.axes(Qt.Vertical)[0])
         regression_series.setName("Regression Curve")
 
-    def set_grouped_cars(self, grouped_cars: list[GroupedCarsByManufacturerAndModel]):
+    def set_grouped_cars(self, grouped_cars: list[GroupedCarsByManufacturerAndModel]) -> None:
         self.grouped_cars_table.setRowCount(0)
         self.grouped_cars_table.setRowCount(len(grouped_cars))
 
         for row, grouped_car in enumerate(grouped_cars):
             checkbox = QCheckBox()
             checkbox.setCheckState(Qt.Unchecked)
-            checkbox.stateChanged.connect(self.set_scored_cars_action)
+            checkbox.stateChanged.connect(self.__publish_update_scored_cars_and_regression_line)
             self.grouped_cars_table.setCellWidget(row, 0, checkbox)
             self.grouped_cars_table.setItem(
                 row,
