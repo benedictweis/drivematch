@@ -17,6 +17,8 @@ from drivematch_desktop.event_bus import EventBus, EventType
 from drivematch_desktop.widgets.analyze import AnalyzeWidget
 from drivematch_desktop.widgets.scrape import ScrapeWidget
 
+from drivematch.types import ScoredCar
+
 logger = logging.getLogger(__name__)
 
 
@@ -92,16 +94,7 @@ class DriveMatchDialog(QDialog):
         self.analyze_widget.set_searches(searches)
 
     def __set_scored_cars(self) -> None:
-        selected_search_id = self.analyze_widget.get_selected_search_id()
-        if selected_search_id is None:
-            logger.info("Got invalid selected search: %s", selected_search_id)
-            show_error_message("Please select a search.")
-            return
-        search_parameters = self.analyze_widget.get_search_parameters()
-        scored_cars = self.drivematch_service.get_scores(
-            selected_search_id,
-            **search_parameters,
-        )
+        scored_cars = self.__get_scored_cars()
         self.analyze_widget.set_scored_cars(scored_cars)
 
     def __set_grouped_cars(self) -> None:
@@ -115,20 +108,24 @@ class DriveMatchDialog(QDialog):
 
     def __set_scored_cars_and_regression_line(self) -> None:
         selected_search_id = self.analyze_widget.get_selected_search_id()
-        if selected_search_id is None:
-            logger.info("Got invalid selected search: %s", selected_search_id)
-            show_error_message("Please select a search.")
-            return
-        search_parameters = self.analyze_widget.get_search_parameters()
-        scored_cars = self.drivematch_service.get_scores(
-            selected_search_id,
-            **search_parameters,
-        )
+        scored_cars = self.__get_scored_cars()
         self.analyze_widget.set_scored_cars(scored_cars)
         regression_line = self.drivematch_service.get_regression_line(
                 selected_search_id, self.analyze_widget.get_function_type()
         )
         self.analyze_widget.set_regression_line(scored_cars, regression_line)
+
+    def __get_scored_cars(self) -> list[ScoredCar]:
+        selected_search_id = self.analyze_widget.get_selected_search_id()
+        if selected_search_id is None:
+            logger.info("Got invalid selected search: %s", selected_search_id)
+            show_error_message("Please select a search.")
+            return []
+        search_parameters = self.analyze_widget.get_search_parameters()
+        return self.drivematch_service.get_scores(
+            selected_search_id,
+            **search_parameters,
+        )
 
 
 def main() -> None:
