@@ -396,3 +396,4 @@ venv
 cache
 *.db
 .vscode
+*.prof

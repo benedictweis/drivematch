@@ -1,6 +1,6 @@
 [project]
 name = "drivematch-desktop"
-version = "0.7.0"
+version = "0.7.1"
 description = ""
 authors = [
     { name = "Benedict Weis", email = "47110382+benedictweis@users.noreply.github.com" },
@@ -24,4 +24,8 @@ packages = ["drivematch_desktop"]
 drivematch = { path = "../../" }
 
 [dependency-groups]
-dev = ["pyinstaller>=6.15.0", "ruff>=0.12.11", "ty>=0.0.1a19"]
+dev = [
+    "pyinstaller>=6.15.0",
+    "ruff>=0.12.11",
+    "ty>=0.0.1a19",
+]

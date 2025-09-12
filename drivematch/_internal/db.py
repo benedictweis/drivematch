@@ -1,4 +1,5 @@
 import datetime
+import re
 import sqlite3
 from abc import ABC, abstractmethod
 
@@ -48,7 +49,7 @@ class SQLiteSearchesRepository(SearchesRepository):
     def insert_cars_for_search(
         self, search_id: str, name: str, url: str, cars: list[Car]
     ) -> None:
-        current_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        current_datetime = datetime.datetime.now().isoformat()
         self.cursor.execute(
             ("INSERT INTO searches (id, name, url, timestamp)VALUES (?, ?, ?, ?)"),
             (search_id, name, url, current_datetime),
@@ -64,17 +65,17 @@ class SQLiteSearchesRepository(SearchesRepository):
             [
                 (
                     car.id,
-                    current_datetime,
+                    car.timestamp.isoformat(),
                     car.manufacturer,
                     car.model,
                     car.description,
                     car.price,
                     ",".join(car.attributes),
-                    car.first_registration.strftime("%Y-%m-%d"),
+                    car.first_registration.isoformat(),
                     car.mileage,
                     car.horse_power,
                     car.fuel_type,
-                    car.advertised_since.strftime("%Y-%m-%d %H:%M:%S"),
+                    car.advertised_since.isoformat(),
                     car.private_seller,
                     car.details_url,
                     car.image_url,
@@ -88,40 +89,45 @@ class SQLiteSearchesRepository(SearchesRepository):
         )
         self.connection.commit()
 
-    def get_cars_for_search(self, search_id: str) -> list[Car]:
+    def get_cars_for_search(self, search_id: str, batch_size: int = 100) -> list[Car]:
         self.cursor.execute(
             """
             SELECT cars.*
             FROM cars
             INNER JOIN searches_cars ON cars.id = searches_cars.car_id
             INNER JOIN searches ON searches_cars.search_id = searches.id
-            WHERE searches.id = ? AND cars.timestamp = searches.timestamp
+            WHERE searches.id = ? AND DATE(cars.timestamp) = DATE(searches.timestamp)
         """,
             (search_id,),
         )
-        rows = self.cursor.fetchall()
+
         cars = []
-        for row in rows:
-            car = Car(
-                id=row[0],
-                timestamp=row[1],
-                manufacturer=row[2],
-                model=row[3],
-                description=row[4],
-                price=row[5],
-                attributes=row[6].split(","),
-                first_registration=datetime.datetime.strptime(row[7], "%Y-%m-%d"),
-                mileage=row[8],
-                horse_power=row[9],
-                fuel_type=row[10],
-                advertised_since=datetime.datetime.strptime(
-                    row[11], "%Y-%m-%d %H:%M:%S"
-                ),
-                private_seller=bool(row[12]),
-                details_url=row[13],
-                image_url=row[14],
-            )
-            cars.append(car)
+
+        while True:
+            rows = self.cursor.fetchmany(batch_size)
+            if not rows:
+                break
+
+            for row in rows:
+                car = Car(
+                    id=row[0],
+                    timestamp=datetime.datetime.fromisoformat(row[1]),
+                    manufacturer=row[2],
+                    model=row[3],
+                    description=row[4],
+                    price=row[5],
+                    attributes=row[6].split(","),
+                    first_registration=datetime.datetime.fromisoformat(row[7]),
+                    mileage=row[8],
+                    horse_power=row[9],
+                    fuel_type=row[10],
+                    advertised_since=datetime.datetime.fromisoformat(row[11]),
+                    private_seller=bool(row[12]),
+                    details_url=row[13],
+                    image_url=row[14],
+                )
+                cars.append(car)
+
         return cars
 
     def get_searches(self) -> list[Search]:

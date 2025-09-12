@@ -11,7 +11,6 @@ def test_should_analyze_cars_data() -> None:
     repository = SQLiteSearchesRepository(":memory:")
 
     now = datetime.datetime.now().replace(microsecond=0)
-    today = now.date()
 
     search_id = "search123456"
     name = "Example Search"
@@ -25,7 +24,7 @@ def test_should_analyze_cars_data() -> None:
             description="A reliable car",
             price=20000,
             attributes=["automatic", "sedan"],
-            first_registration=today,
+            first_registration=now,
             mileage=15000,
             horse_power=150,
             fuel_type="Petrol",

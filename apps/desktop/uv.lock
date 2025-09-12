@@ -102,6 +102,7 @@ dev = [
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-cov", specifier = ">=6.2.1" },
     { name = "ruff", specifier = ">=0.12.11" },
+    { name = "tuna", specifier = ">=0.5.11" },
     { name = "ty", specifier = ">=0.0.1a19" },
 ]
 

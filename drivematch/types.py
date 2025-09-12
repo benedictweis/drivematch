@@ -1,13 +1,13 @@
 import datetime
 from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum
-
-from pydantic import BaseModel
 
 from drivematch._internal import regression_functions
 
 
-class Search(BaseModel):
+@dataclass
+class Search:
     id: str
     name: str
     url: str
@@ -15,7 +15,8 @@ class Search(BaseModel):
     amount_of_cars: int
 
 
-class Car(BaseModel):
+@dataclass
+class Car:
     id: str
     timestamp: datetime.datetime
     manufacturer: str
@@ -33,12 +34,14 @@ class Car(BaseModel):
     image_url: str
 
 
-class ScoredCar(BaseModel):
+@dataclass
+class ScoredCar:
     car: Car
     score: float
 
 
-class GroupedCarsByManufacturerAndModel(BaseModel):
+@dataclass
+class GroupedCarsByManufacturerAndModel:
     manufacturer: str
     model: str
     count: int
