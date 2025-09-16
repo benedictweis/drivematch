@@ -31,15 +31,11 @@ class SQLiteSearchesRepository(SearchesRepository):
         self.connection = sqlite3.connect(db_path, check_same_thread=False)
         self.cursor = self.connection.cursor()
 
-        self.cursor.execute(
-            "CREATE TABLE IF NOT EXISTS searches (id TEXT PRIMARY KEY, name TEXT, url TEXT, timestamp DATETIME)"
-        )
-        self.cursor.execute(
-            "CREATE TABLE IF NOT EXISTS searches_cars (search_id TEXT, car_id TEXT, FOREIGN KEY (search_id) REFERENCES searches(id), FOREIGN KEY (car_id) REFERENCES cars(id))"
-        )
-        self.cursor.execute(
-            "CREATE TABLE IF NOT EXISTS cars (id TEXT, timestamp DATETIME, manufacturer TEXT, model TEXT, description TEXT, price INTEGER, attributes TEXT, firstRegistration DATETIME, mileage INTEGER, horsePower INTEGER, fuelType TEXT, advertisedSince DATETIME, privateSeller INTEGER, detailsURL TEXT, imageURL TEXT, PRIMARY KEY (id, timestamp))"
-        )
+        self.cursor.executescript("""
+            CREATE TABLE IF NOT EXISTS searches (id TEXT PRIMARY KEY, name TEXT, url TEXT, timestamp DATETIME);
+            CREATE TABLE IF NOT EXISTS searches_cars (search_id TEXT, car_id TEXT, FOREIGN KEY (search_id) REFERENCES searches(id), FOREIGN KEY (car_id) REFERENCES cars(id));
+            CREATE TABLE IF NOT EXISTS cars (id TEXT, timestamp DATETIME, manufacturer TEXT, model TEXT, description TEXT, price INTEGER, attributes TEXT, firstRegistration DATETIME, mileage INTEGER, horsePower INTEGER, fuelType TEXT, advertisedSince DATETIME, privateSeller INTEGER, detailsURL TEXT, imageURL TEXT, PRIMARY KEY (id, timestamp));
+        """)
 
         self.connection.commit()
 
@@ -51,7 +47,7 @@ class SQLiteSearchesRepository(SearchesRepository):
     ) -> None:
         current_datetime = datetime.datetime.now().isoformat()
         self.cursor.execute(
-            ("INSERT INTO searches (id, name, url, timestamp)VALUES (?, ?, ?, ?)"),
+            ("INSERT INTO searches (id, name, url, timestamp) VALUES (?, ?, ?, ?)"),
             (search_id, name, url, current_datetime),
         )
         self.cursor.executemany(
@@ -131,16 +127,21 @@ class SQLiteSearchesRepository(SearchesRepository):
         return cars
 
     def get_searches(self) -> list[Search]:
-        self.cursor.execute("SELECT * FROM searches")
+        self.cursor.execute("""
+            SELECT searches.*, COUNT(searches_cars.car_id) as amount_of_cars
+            FROM searches
+            LEFT JOIN searches_cars ON searches.id = searches_cars.search_id
+            GROUP BY searches.id, searches.name, searches.url, searches.timestamp
+        """)
         rows = self.cursor.fetchall()
         searches = []
         for row in rows:
             search = Search(
-                id=row[0],
-                name=row[1],
-                url=row[2],
-                timestamp=row[3],
-                amount_of_cars=len(self.get_cars_for_search(row[0])),
+            id=row[0],
+            name=row[1],
+            url=row[2],
+            timestamp=row[3],
+            amount_of_cars=row[4],
             )
             searches.append(search)
         self.connection.commit()

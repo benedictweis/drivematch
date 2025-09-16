@@ -1,6 +1,5 @@
 import cProfile
 import datetime
-from pathlib import Path
 import pstats
 import random
 import uuid
@@ -9,8 +8,7 @@ from drivematch._internal.analysis import CarsAnalyzer
 from drivematch._internal.db import SQLiteSearchesRepository
 from drivematch._internal.scraping import MobileDeScraper
 from drivematch.core import DriveMatchService
-from drivematch.types import Car
-from drivematch.types import RegressionFunctionType
+from drivematch.types import Car, RegressionFunctionType
 
 repository = SQLiteSearchesRepository(":memory:")
 
@@ -60,6 +58,10 @@ repository.insert_cars_for_search(
 
 
 functions = [
+    [
+        "perf/get_searches.prof",
+        lambda: drivematch_service.get_searches(),
+    ],
     [
         "perf/get_scores.prof",
         lambda: drivematch_service.get_scores(
