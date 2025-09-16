@@ -78,7 +78,7 @@ wheels = [
 
 [[package]]
 name = "drivematch"
-version = "0.7.0"
+version = "0.7.2"
 source = { directory = "../../" }
 dependencies = [
     { name = "bs4" },
@@ -108,7 +108,7 @@ dev = [
 
 [[package]]
 name = "drivematch-desktop"
-version = "0.7.0"
+version = "0.7.2"
 source = { editable = "." }
 dependencies = [
     { name = "drivematch" },

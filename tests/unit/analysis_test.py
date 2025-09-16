@@ -67,7 +67,7 @@ def test_should_group_cars_with_same_manufacturer_and_model(
     assert grouped_cars[0].average_advertisement_age == 0
     assert grouped_cars[0].cars == [car1, car2]
 
-
+@pytest.mark.unit
 def test_should_score_cars_according_to_weights_set(car1: Car, car2: Car) -> None:
     analyzer = CarsAnalyzer()
     analyzer.set_cars([car1, car2])
