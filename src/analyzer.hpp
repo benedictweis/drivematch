@@ -4,21 +4,22 @@
 #include <chrono>
 #include "types.hpp"
 
-class CarsAnalyzer {
+class CarsAnalyzer
+{
 public:
-    CarsAnalyzer(const std::vector<Car>& cars);
-    void setCars(const std::vector<Car>& cars);
-    void setWeightsAndFilters(
+    CarsAnalyzer(const std::vector<Car> &cars);
+    void setCars(const std::vector<Car> &cars);
+    void setWeights(
         float weightHorsePower,
         float weightPrice,
         float weightMileage,
         float weightAge,
         float preferredAge,
         float weightAdvertisementAge,
-        float preferredAdvertisementAge,
-        const std::vector<std::string>& filterByManufacturers,
-        const std::vector<std::string>& filterByModels
-    );
+        float preferredAdvertisementAge);
+    void setFilters(
+        const std::vector<std::string> &filterByManufacturers,
+        const std::vector<std::string> &filterByModels);
 
     std::vector<ScoredCar> getScoredCars();
     std::vector<GroupedCarsByManufacturerAndModel> getGroupedCars();
@@ -49,6 +50,6 @@ private:
     int maxAdvertisementAge = 0;
 
     void calculateMinMaxValues();
-    bool filterCar(const Car& car);
-    float scoreCar(const Car& car);
+    bool filterCar(const Car &car);
+    float scoreCar(const Car &car);
 };
