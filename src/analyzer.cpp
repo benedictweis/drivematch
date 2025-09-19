@@ -4,31 +4,19 @@
 
 const float EPSILON = 1e-10;
 
-float normalize(float value, float minValue, float maxValue)
-{
-    if (maxValue == minValue)
-        return 0.0f;
+float normalize(float value, float minValue, float maxValue) {
+    if (maxValue == minValue) return 0.0f;
     return (value - minValue + EPSILON) * 100 / (maxValue - minValue + EPSILON);
 }
 
-CarsAnalyzer::CarsAnalyzer(const std::vector<Car> &cars) : cars(cars)
-{
-}
+CarsAnalyzer::CarsAnalyzer(const std::vector<Car> &cars) : cars(cars) {}
 
-void CarsAnalyzer::setCars(const std::vector<Car> &cars)
-{
-    this->cars = cars;
-}
+void CarsAnalyzer::setCars(const std::vector<Car> &cars) { this->cars = cars; }
 
-void CarsAnalyzer::setWeights(
-    float weightHp,
-    float weightPrice,
-    float weightMileage,
-    float weightAge,
-    float preferredAge,
-    float weightAdvertisementAge,
-    float preferredAdvertisementAge)
-{
+void CarsAnalyzer::setWeights(float weightHp, float weightPrice,
+                              float weightMileage, float weightAge,
+                              float preferredAge, float weightAdvertisementAge,
+                              float preferredAdvertisementAge) {
     this->weightHorsePower = weightHp;
     this->weightPrice = weightPrice;
     this->weightMileage = weightMileage;
@@ -40,53 +28,46 @@ void CarsAnalyzer::setWeights(
 
 void CarsAnalyzer::setFilters(
     const std::vector<std::string> &filterByManufacturers,
-    const std::vector<std::string> &filterByModels)
-{
+    const std::vector<std::string> &filterByModels) {
     this->filterByManufacturers = filterByManufacturers;
     this->filterByModels = filterByModels;
 }
 
-std::vector<ScoredCar> CarsAnalyzer::getScoredCars()
-{
+std::vector<ScoredCar> CarsAnalyzer::getScoredCars() {
     this->currentTimestamp = std::chrono::system_clock::now();
     std::vector<ScoredCar> scoredCars;
     scoredCars.reserve(this->cars.size());
     calculateMinMaxValues();
-    for (const Car &car : cars)
-    {
-        if (filterCar(car))
-            continue;
+    for (const Car &car : cars) {
+        if (filterCar(car)) continue;
         scoredCars.push_back({.car = car, .score = scoreCar(car)});
     }
     std::sort(scoredCars.begin(), scoredCars.end(),
-              [](const ScoredCar &a, const ScoredCar &b)
-              {
+              [](const ScoredCar &a, const ScoredCar &b) {
                   return a.score > b.score;
               });
     return scoredCars;
 }
 
-std::vector<GroupedCarsByManufacturerAndModel> CarsAnalyzer::getGroupedCarsByManufacturerAndModel()
-{
+std::vector<GroupedCarsByManufacturerAndModel>
+CarsAnalyzer::getGroupedCarsByManufacturerAndModel() {
     this->currentTimestamp = std::chrono::system_clock::now();
 
-    std::map<std::pair<std::string, std::string>, std::vector<Car>> groupedCarsMap;
-    for (const Car &car : cars)
-    {
-        if (groupedCarsMap.find({car.manufacturer, car.model}) == groupedCarsMap.end())
-        {
-            groupedCarsMap[{car.manufacturer, car.model}] = std::vector<Car>{car};
-        }
-        else
-        {
+    std::map<std::pair<std::string, std::string>, std::vector<Car>>
+        groupedCarsMap;
+    for (const Car &car : cars) {
+        if (groupedCarsMap.find({car.manufacturer, car.model}) ==
+            groupedCarsMap.end()) {
+            groupedCarsMap[{car.manufacturer, car.model}] =
+                std::vector<Car>{car};
+        } else {
             groupedCarsMap[{car.manufacturer, car.model}].push_back(car);
         }
     }
 
     std::vector<GroupedCarsByManufacturerAndModel> groupedCars;
     groupedCars.reserve(groupedCarsMap.size());
-    for (const auto &[key, cars] : groupedCarsMap)
-    {
+    for (const auto &[key, cars] : groupedCarsMap) {
         const std::string &manufacturer = key.first;
         const std::string &model = key.second;
 
@@ -96,38 +77,42 @@ std::vector<GroupedCarsByManufacturerAndModel> CarsAnalyzer::getGroupedCarsByMan
         float totalAge = 0.0f;
         float totalAdvertisementAge = 0.0f;
 
-        for (const Car &car : cars)
-        {
+        for (const Car &car : cars) {
             totalPrice += car.price;
             totalMileage += car.mileage;
             totalHorsePower += car.horsePower;
-            totalAge += std::chrono::duration_cast<std::chrono::days>(currentTimestamp - car.firstRegistration).count();
-            totalAdvertisementAge += std::chrono::duration_cast<std::chrono::days>(currentTimestamp - car.advertisedSince).count();
+            totalAge += std::chrono::duration_cast<std::chrono::days>(
+                            currentTimestamp - car.firstRegistration)
+                            .count();
+            totalAdvertisementAge +=
+                std::chrono::duration_cast<std::chrono::days>(
+                    currentTimestamp - car.advertisedSince)
+                    .count();
         }
 
         const int count = cars.size();
-        groupedCars.push_back({.manufacturer = manufacturer,
-                               .model = model,
-                               .count = count,
-                               .averagePrice = totalPrice / count,
-                               .averageMileage = totalMileage / count,
-                               .averageHorsePower = totalHorsePower / count,
-                               .averageAge = totalAge / count,
-                               .averageAdvertisementAge = totalAdvertisementAge / count,
-                               .cars = cars});
+        groupedCars.push_back(
+            {.manufacturer = manufacturer,
+             .model = model,
+             .count = count,
+             .averagePrice = totalPrice / count,
+             .averageMileage = totalMileage / count,
+             .averageHorsePower = totalHorsePower / count,
+             .averageAge = totalAge / count,
+             .averageAdvertisementAge = totalAdvertisementAge / count,
+             .cars = cars});
     }
 
     std::sort(groupedCars.begin(), groupedCars.end(),
-              [](const GroupedCarsByManufacturerAndModel &a, const GroupedCarsByManufacturerAndModel &b)
-              {
+              [](const GroupedCarsByManufacturerAndModel &a,
+                 const GroupedCarsByManufacturerAndModel &b) {
                   return a.count > b.count;
               });
 
     return groupedCars;
 }
 
-void CarsAnalyzer::calculateMinMaxValues()
-{
+void CarsAnalyzer::calculateMinMaxValues() {
     minHorsePower = INT_MAX;
     maxHorsePower = 0;
     minPrice = INT_MAX;
@@ -139,30 +124,26 @@ void CarsAnalyzer::calculateMinMaxValues()
     minAdvertisementAge = INT_MAX;
     maxAdvertisementAge = 0;
 
-    for (const Car &car : cars)
-    {
-        if (car.horsePower < minHorsePower)
-            minHorsePower = car.horsePower;
-        if (car.horsePower > maxHorsePower)
-            maxHorsePower = car.horsePower;
+    for (const Car &car : cars) {
+        if (car.horsePower < minHorsePower) minHorsePower = car.horsePower;
+        if (car.horsePower > maxHorsePower) maxHorsePower = car.horsePower;
 
-        if (car.price < minPrice)
-            minPrice = car.price;
-        if (car.price > maxPrice)
-            maxPrice = car.price;
+        if (car.price < minPrice) minPrice = car.price;
+        if (car.price > maxPrice) maxPrice = car.price;
 
-        if (car.mileage < minMileage)
-            minMileage = car.mileage;
-        if (car.mileage > maxMileage)
-            maxMileage = car.mileage;
+        if (car.mileage < minMileage) minMileage = car.mileage;
+        if (car.mileage > maxMileage) maxMileage = car.mileage;
 
-        int ageDays = std::chrono::duration_cast<std::chrono::days>(currentTimestamp - car.firstRegistration).count();
-        if (ageDays < minAge)
-            minAge = ageDays;
-        if (ageDays > maxAge)
-            maxAge = ageDays;
+        int ageDays = std::chrono::duration_cast<std::chrono::days>(
+                          currentTimestamp - car.firstRegistration)
+                          .count();
+        if (ageDays < minAge) minAge = ageDays;
+        if (ageDays > maxAge) maxAge = ageDays;
 
-        int advertisementAgeDays = std::chrono::duration_cast<std::chrono::days>(currentTimestamp - car.advertisedSince).count();
+        int advertisementAgeDays =
+            std::chrono::duration_cast<std::chrono::days>(currentTimestamp -
+                                                          car.advertisedSince)
+                .count();
         if (advertisementAgeDays < minAdvertisementAge)
             minAdvertisementAge = advertisementAgeDays;
         if (advertisementAgeDays > maxAdvertisementAge)
@@ -170,59 +151,56 @@ void CarsAnalyzer::calculateMinMaxValues()
     }
 }
 
-bool CarsAnalyzer::filterCar(const Car &car) const
-{
-    if (!this->filterByManufacturers.empty())
-    {
+bool CarsAnalyzer::filterCar(const Car &car) const {
+    if (!this->filterByManufacturers.empty()) {
         bool containedInManufacturer = false;
-        for (const std::string manufacturer : this->filterByManufacturers)
-        {
-            if (car.manufacturer == manufacturer)
-            {
+        for (const std::string manufacturer : this->filterByManufacturers) {
+            if (car.manufacturer == manufacturer) {
                 containedInManufacturer = true;
             }
         }
-        if (!containedInManufacturer)
-        {
+        if (!containedInManufacturer) {
             return true;
         }
     }
-    if (!this->filterByModels.empty())
-    {
+    if (!this->filterByModels.empty()) {
         bool containedInModel = false;
-        for (const std::string model : this->filterByModels)
-        {
-
-            if (car.model == model)
-            {
+        for (const std::string model : this->filterByModels) {
+            if (car.model == model) {
                 containedInModel = true;
             }
         }
-        if (!containedInModel)
-        {
+        if (!containedInModel) {
             return true;
         }
     }
     return false;
 }
 
-float CarsAnalyzer::scoreCar(const Car &car) const
-{
-    const int ageDays = std::chrono::duration_cast<std::chrono::days>(currentTimestamp - car.firstRegistration).count();
+float CarsAnalyzer::scoreCar(const Car &car) const {
+    const int ageDays = std::chrono::duration_cast<std::chrono::days>(
+                            currentTimestamp - car.firstRegistration)
+                            .count();
     const int ageDaysDiff = std::abs(ageDays - preferredAge);
 
-    const int advertisementAgeDays = std::chrono::duration_cast<std::chrono::days>(currentTimestamp - car.advertisedSince).count();
-    const int advertisementAgeDaysDiff = std::abs(advertisementAgeDays - preferredAdvertisementAge);
+    const int advertisementAgeDays =
+        std::chrono::duration_cast<std::chrono::days>(currentTimestamp -
+                                                      car.advertisedSince)
+            .count();
+    const int advertisementAgeDaysDiff =
+        std::abs(advertisementAgeDays - preferredAdvertisementAge);
 
-    const float normalizedHorsePower = normalize(car.horsePower, minHorsePower, maxHorsePower);
+    const float normalizedHorsePower =
+        normalize(car.horsePower, minHorsePower, maxHorsePower);
     const float normalizedPrice = normalize(car.price, minPrice, maxPrice);
-    const float normalizedMileage = normalize(car.mileage, minMileage, maxMileage);
+    const float normalizedMileage =
+        normalize(car.mileage, minMileage, maxMileage);
     const float normalizedAge = normalize(ageDaysDiff, minAge, maxAge);
-    const float normalizedAdvertisementAge = normalize(advertisementAgeDaysDiff, minAdvertisementAge, maxAdvertisementAge);
+    const float normalizedAdvertisementAge = normalize(
+        advertisementAgeDaysDiff, minAdvertisementAge, maxAdvertisementAge);
 
     return (weightHorsePower * normalizedHorsePower) +
            (weightPrice * normalizedPrice) +
-           (weightMileage * normalizedMileage) +
-           (weightAge * normalizedAge) +
+           (weightMileage * normalizedMileage) + (weightAge * normalizedAge) +
            (weightAdvertisementAge * normalizedAdvertisementAge);
 }

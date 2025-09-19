@@ -1,10 +1,9 @@
 #pragma once
 
-#include <string>
 #include <chrono>
+#include <string>
 
-struct Search
-{
+struct Search {
     std::string id;
     std::string name;
     std::string url;
@@ -12,8 +11,7 @@ struct Search
     int amountOfCars;
 };
 
-struct Car
-{
+struct Car {
     std::string providerId;
     std::chrono::system_clock::time_point timestamp;
     std::string manufacturer;
@@ -31,14 +29,12 @@ struct Car
     std::string imageURL;
 };
 
-struct ScoredCar
-{
+struct ScoredCar {
     Car car;
     float score;
 };
 
-struct GroupedCarsByManufacturerAndModel
-{
+struct GroupedCarsByManufacturerAndModel {
     std::string manufacturer;
     std::string model;
     int count;

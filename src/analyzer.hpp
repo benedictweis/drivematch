@@ -1,30 +1,27 @@
 #pragma once
 
-#include <vector>
 #include <chrono>
+#include <vector>
+
 #include "types.hpp"
 
-class CarsAnalyzer
-{
-public:
+class CarsAnalyzer {
+   public:
     CarsAnalyzer(const std::vector<Car> &cars);
+    ~CarsAnalyzer() = default;
     void setCars(const std::vector<Car> &cars);
-    void setWeights(
-        float weightHorsePower,
-        float weightPrice,
-        float weightMileage,
-        float weightAge,
-        float preferredAge,
-        float weightAdvertisementAge,
-        float preferredAdvertisementAge);
-    void setFilters(
-        const std::vector<std::string> &filterByManufacturers,
-        const std::vector<std::string> &filterByModels);
+    void setWeights(float weightHorsePower, float weightPrice,
+                    float weightMileage, float weightAge, float preferredAge,
+                    float weightAdvertisementAge,
+                    float preferredAdvertisementAge);
+    void setFilters(const std::vector<std::string> &filterByManufacturers,
+                    const std::vector<std::string> &filterByModels);
 
     std::vector<ScoredCar> getScoredCars();
-    std::vector<GroupedCarsByManufacturerAndModel> getGroupedCarsByManufacturerAndModel();
+    std::vector<GroupedCarsByManufacturerAndModel>
+    getGroupedCarsByManufacturerAndModel();
 
-private:
+   private:
     std::vector<Car> cars;
     std::chrono::system_clock::time_point currentTimestamp;
 
