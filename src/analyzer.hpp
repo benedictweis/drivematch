@@ -22,7 +22,7 @@ public:
         const std::vector<std::string> &filterByModels);
 
     std::vector<ScoredCar> getScoredCars();
-    std::vector<GroupedCarsByManufacturerAndModel> getGroupedCars();
+    std::vector<GroupedCarsByManufacturerAndModel> getGroupedCarsByManufacturerAndModel();
 
 private:
     std::vector<Car> cars;
@@ -50,6 +50,6 @@ private:
     int maxAdvertisementAge = 0;
 
     void calculateMinMaxValues();
-    bool filterCar(const Car &car);
-    float scoreCar(const Car &car);
+    bool filterCar(const Car &car) const;
+    float scoreCar(const Car &car) const;
 };
