@@ -7,6 +7,6 @@
 #include "repository.hpp"
 #include "types.hpp"
 
-DriveMatchService::DriveMatchService(CarsSearchRepository carsSearchRepository,
-                                     CarsAnalyzer carsAnalyzer)
+DriveMatchService::DriveMatchService(CarsSearchRepository& carsSearchRepository,
+                                     CarsAnalyzer& carsAnalyzer)
     : carsSearchRepository(carsSearchRepository), carsAnalyzer(carsAnalyzer) {}

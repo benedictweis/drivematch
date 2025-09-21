@@ -1,8 +1,10 @@
 #include <iostream>
 
 #include "analyzer.hpp"
-#include "doctest.h"
+#include "doctest/doctest.h"
 #include "helper.hpp"
+
+#include "QTableView"
 
 class ManyCarsFixture {
    private:

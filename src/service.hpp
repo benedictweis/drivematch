@@ -9,8 +9,8 @@
 
 class DriveMatchService {
    public:
-    DriveMatchService(CarsSearchRepository carsSearchRepository,
-                      CarsAnalyzer carsAnalyzer);
+    DriveMatchService(CarsSearchRepository& carsSearchRepository,
+                      CarsAnalyzer& carsAnalyzer);
     ~DriveMatchService() = default;
 
     std::vector<Search> getSearches();
@@ -19,6 +19,6 @@ class DriveMatchService {
         std::string searchId);
 
    private:
-    const CarsSearchRepository carsSearchRepository;
-    const CarsAnalyzer carsAnalyzer;
+    const CarsSearchRepository& carsSearchRepository;
+    const CarsAnalyzer& carsAnalyzer;
 };
