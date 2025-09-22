@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16) # newer minimum for modern features
+cmake_minimum_required(VERSION 3.16)
 project(DriveMatch VERSION 0.0.1 LANGUAGES CXX)
 
 # --- Global settings ---

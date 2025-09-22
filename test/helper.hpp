@@ -1,9 +1,8 @@
 #pragma once
-
-#include <random>
 #include <string>
 
 #include "types.hpp"
+#include "uuid.hpp"
 
 namespace test {
 namespace helper {
@@ -46,16 +45,16 @@ const Car BEST_CAR =
         .detailsURL = "http://example.com/best_car",
         .imageURL = "http://example.com/best_car/image"};
 
-Car generateRandomCarWithManufacturerAndModel(const std::string &manufacturer,
+inline Car generateRandomCarWithManufacturerAndModel(const std::string &manufacturer,
                                               const std::string &model) {
+    static std::chrono::system_clock::time_point now =
+        std::chrono::system_clock::now();
     static std::random_device rd;
     static std::mt19937_64 gen(rd());
     static std::uniform_int_distribution<uint64_t> dis;
-    static std::chrono::system_clock::time_point now =
-        std::chrono::system_clock::now();
 
     return Car{
-        .providerId = std::to_string(dis(gen)),
+        .providerId = generateUUID(),
         .timestamp = now,
         .manufacturer = manufacturer,
         .model = model,
@@ -74,8 +73,37 @@ Car generateRandomCarWithManufacturerAndModel(const std::string &manufacturer,
             now -
             std::chrono::hours(24 * (dis(gen) % 60)),  // Up to 60 days ago
         .isPrivateSeller = dis(gen) % 2 == 0,
-        .detailsURL = "http://example.com/car/" + std::to_string(dis(gen)),
-        .imageURL = "http://example.com/car/image/" + std::to_string(dis(gen))};
+        .detailsURL = "http://example.com/car/" + generateUUID(),
+        .imageURL = "http://example.com/car/image/" + generateUUID(),
+    };
 }
+
+class ManyCarsFixture {
+   private:
+    static std::vector<Car> manyCars;
+    static bool initialized;
+    const int numCars = 100000;
+
+   public:
+    ManyCarsFixture() {
+        if (initialized) return;
+        this->manyCars.reserve(this->numCars);
+        for (int i = 0; i < numCars / 2; ++i) {
+            this->manyCars.push_back(
+                generateRandomCarWithManufacturerAndModel("BMW", "X5"));
+            this->manyCars.push_back(
+                generateRandomCarWithManufacturerAndModel("Audi", "A6"));
+        }
+        initialized = true;
+    }
+
+    const int &getNumCars() const { return this->numCars; }
+
+    const std::vector<Car> &getManyCars() const { return this->manyCars; }
+};
+
+inline std::vector<Car> ManyCarsFixture::manyCars;
+inline bool ManyCarsFixture::initialized = false;
+
 }  // namespace helper
 }  // namespace test

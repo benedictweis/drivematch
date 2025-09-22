@@ -4,38 +4,7 @@
 #include "doctest/doctest.h"
 #include "helper.hpp"
 
-#include "QTableView"
-
-class ManyCarsFixture {
-   private:
-    static std::vector<Car> manyCars;
-    static bool initialized;
-    const int numCars = 100000;
-
-   public:
-    ManyCarsFixture() {
-        if (initialized) return;
-        this->manyCars.reserve(this->numCars);
-        for (int i = 0; i < numCars / 2; ++i) {
-            this->manyCars.push_back(
-                test::helper::generateRandomCarWithManufacturerAndModel("BMW",
-                                                                        "X5"));
-            this->manyCars.push_back(
-                test::helper::generateRandomCarWithManufacturerAndModel("Audi",
-                                                                        "A6"));
-        }
-        initialized = true;
-    }
-
-    const int &getNumCars() const { return this->numCars; }
-
-    const std::vector<Car> &getManyCars() const { return this->manyCars; }
-};
-
-std::vector<Car> ManyCarsFixture::manyCars;
-bool ManyCarsFixture::initialized = false;
-
-TEST_SUITE("CarsAnalyzer Test") {
+TEST_SUITE("CarsAnalyzer Test Suite") {
     const Car BMW_X5 =
         test::helper::generateRandomCarWithManufacturerAndModel("BMW", "X5");
     const Car BMW_M3 =
@@ -46,7 +15,7 @@ TEST_SUITE("CarsAnalyzer Test") {
         test::helper::generateRandomCarWithManufacturerAndModel("Mercedes",
                                                                 "E300");
 
-    TEST_CASE_FIXTURE(ManyCarsFixture,
+    TEST_CASE_FIXTURE(test::helper::ManyCarsFixture,
                       "CarsAnalyzer::getScoredCars assigns a score to each car "
                       "within time constraints" *
                           doctest::timeout(1)) {
@@ -131,7 +100,7 @@ TEST_SUITE("CarsAnalyzer Test") {
     }
 
     TEST_CASE_FIXTURE(
-        ManyCarsFixture,
+        test::helper::ManyCarsFixture,
         "CarsAnalyzer::getGroupedCarsByManufacturerAndModel groups cars by "
         "manufacturer and model within time constraints" *
             doctest::timeout(1)) {
