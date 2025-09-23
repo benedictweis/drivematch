@@ -17,7 +17,7 @@ TEST_SUITE("CarsAnalyzer Test Suite") {
 
     TEST_CASE_FIXTURE(test::helper::ManyCarsFixture,
                       "CarsAnalyzer::getScoredCars assigns a score to each car "
-                      "within time constraints" *
+                      "within time constraints [unit][performance]" *
                           doctest::timeout(1)) {
         CarsAnalyzer analyzerWithManyCars(getManyCars());
         std::vector<ScoredCar> scoredCars =
@@ -29,9 +29,9 @@ TEST_SUITE("CarsAnalyzer Test Suite") {
     }
 
     TEST_CASE(
-        "CarsAnalyzer::getScoredCars assigns a better score to a better car") {
+        "CarsAnalyzer::getScoredCars assigns a better score to a better car [unit]") {
         CarsAnalyzer analyzerWithTwoCars(
-            {test::helper::WORSE_CAR, test::helper::BEST_CAR});
+            {test::helper::WORST_CAR, test::helper::BEST_CAR});
 
         std::vector<ScoredCar> scoredCars = analyzerWithTwoCars.getScoredCars();
         CHECK(scoredCars.size() == 2);
@@ -39,12 +39,12 @@ TEST_SUITE("CarsAnalyzer Test Suite") {
         CHECK(scoredCars[0].car.providerId ==
               test::helper::BEST_CAR.providerId);
         CHECK(scoredCars[1].car.providerId ==
-              test::helper::WORSE_CAR.providerId);
+              test::helper::WORST_CAR.providerId);
     }
 
-    TEST_CASE("CarsAnalyzer::getScoredCars respects weights") {
+    TEST_CASE("CarsAnalyzer::getScoredCars respects weights [unit]") {
         CarsAnalyzer analyzerWithTwoCars(
-            {test::helper::WORSE_CAR, test::helper::BEST_CAR});
+            {test::helper::WORST_CAR, test::helper::BEST_CAR});
 
         analyzerWithTwoCars.setWeights(-1, 1, 1, 1, 100, 1, 100);
 
@@ -52,12 +52,12 @@ TEST_SUITE("CarsAnalyzer Test Suite") {
         CHECK(scoredCars.size() == 2);
         CHECK(scoredCars[0].score > scoredCars[1].score);
         CHECK(scoredCars[0].car.providerId ==
-              test::helper::WORSE_CAR.providerId);
+              test::helper::WORST_CAR.providerId);
         CHECK(scoredCars[1].car.providerId ==
               test::helper::BEST_CAR.providerId);
     }
 
-    TEST_CASE("CarsAnalyzer::getScoredCars respects filters") {
+    TEST_CASE("CarsAnalyzer::getScoredCars respects filters [unit]") {
         CarsAnalyzer analyzerWithDifferentCars(
             {BMW_X5, BMW_M3, AUDI_A6, MERCEDES_E300});
 
@@ -83,7 +83,7 @@ TEST_SUITE("CarsAnalyzer Test Suite") {
 
     TEST_CASE(
         "CarsAnalyzer::getGroupedCarsByManufacturerAndModel groups cars by "
-        "manufacturer and model") {
+        "manufacturer and model [unit]") {
         CarsAnalyzer analyzerWithDifferentCars({BMW_M3, AUDI_A6, AUDI_A6});
 
         std::vector<GroupedCarsByManufacturerAndModel> groupedCars =
@@ -102,7 +102,7 @@ TEST_SUITE("CarsAnalyzer Test Suite") {
     TEST_CASE_FIXTURE(
         test::helper::ManyCarsFixture,
         "CarsAnalyzer::getGroupedCarsByManufacturerAndModel groups cars by "
-        "manufacturer and model within time constraints" *
+        "manufacturer and model within time constraints [unit][performance]" *
             doctest::timeout(1)) {
         CarsAnalyzer analyzerWithManyCars(getManyCars());
         std::vector<GroupedCarsByManufacturerAndModel> groupedCars =

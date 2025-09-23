@@ -61,13 +61,13 @@ void SQLiteCarSearchRepository::insertCarsForSearch(std::string searchId,
                                                     std::vector<Car> cars) {
     SQLite::Transaction transaction(*this->database);
 
-    int currentTimeInSecondsSinceEpoch = static_cast<int>(
-        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    int currentTimeSinceEpoch =
+        this->serializeTimePoint(std::chrono::system_clock::now());
 
     this->insertSearchStmt->bind(1, searchId);
     this->insertSearchStmt->bind(2, name);
     this->insertSearchStmt->bind(3, url);
-    this->insertSearchStmt->bind(4, currentTimeInSecondsSinceEpoch);
+    this->insertSearchStmt->bind(4, currentTimeSinceEpoch);
 
     this->insertSearchStmt->exec();
     this->insertSearchStmt->reset();
@@ -78,28 +78,19 @@ void SQLiteCarSearchRepository::insertCarsForSearch(std::string searchId,
 
         this->insertCarStmt->bind(1, carUUID);
         this->insertCarStmt->bind(2, car.providerId);
-        this->insertCarStmt->bind(
-            3, static_cast<int>(
-                   std::chrono::system_clock::to_time_t(car.timestamp)));
+        this->insertCarStmt->bind(3, this->serializeTimePoint(car.timestamp));
         this->insertCarStmt->bind(4, car.manufacturer);
         this->insertCarStmt->bind(5, car.model);
         this->insertCarStmt->bind(6, car.description);
         this->insertCarStmt->bind(7, car.price);
-        // Join attributes vector into a comma-separated string
-        std::string attributesStr;
-        for (size_t j = 0; j < car.attributes.size(); ++j)
-            attributesStr +=
-                car.attributes[j] + (j < car.attributes.size() - 1 ? "," : "");
-        this->insertCarStmt->bind(8, attributesStr);
+        this->insertCarStmt->bind(8, this->serializeAttributes(car.attributes));
         this->insertCarStmt->bind(
-            9, static_cast<int>(std::chrono::system_clock::to_time_t(
-                   car.firstRegistration)));
+            9, this->serializeTimePoint(car.firstRegistration));
         this->insertCarStmt->bind(10, car.mileage);
         this->insertCarStmt->bind(11, car.horsePower);
         this->insertCarStmt->bind(12, car.fuelType);
         this->insertCarStmt->bind(
-            13, static_cast<int>(
-                    std::chrono::system_clock::to_time_t(car.advertisedSince)));
+            13, this->serializeTimePoint(car.advertisedSince));
         this->insertCarStmt->bind(14, car.isPrivateSeller ? 1 : 0);
         this->insertCarStmt->bind(15, car.detailsURL);
         this->insertCarStmt->bind(16, car.imageURL);
@@ -125,7 +116,7 @@ std::vector<Search> SQLiteCarSearchRepository::getSearches() {
             .id = this->getSearchesStmt->getColumn(0).getString(),
             .name = this->getSearchesStmt->getColumn(1).getString(),
             .url = this->getSearchesStmt->getColumn(2).getString(),
-            .timestamp = std::chrono::system_clock::from_time_t(
+            .timestamp = this->deserializeTimePoint(
                 this->getSearchesStmt->getColumn(3).getInt()),
             .amountOfCars = this->getSearchesStmt->getColumn(4).getInt()};
         searches.push_back(search);
@@ -145,37 +136,21 @@ std::vector<Car> SQLiteCarSearchRepository::getCarsForSearch(
     while (this->getCarsForSearchStmt->executeStep()) {
         Car car{
             .providerId = this->getCarsForSearchStmt->getColumn(1).getString(),
-            .timestamp = std::chrono::system_clock::from_time_t(
+            .timestamp = this->deserializeTimePoint(
                 this->getCarsForSearchStmt->getColumn(2).getInt()),
             .manufacturer =
                 this->getCarsForSearchStmt->getColumn(3).getString(),
             .model = this->getCarsForSearchStmt->getColumn(4).getString(),
             .description = this->getCarsForSearchStmt->getColumn(5).getString(),
             .price = this->getCarsForSearchStmt->getColumn(6).getInt(),
-            .attributes = 
-                [this]() {
-                    std::vector<std::string> attrs;
-                    std::string attributesStr =
-                        this->getCarsForSearchStmt->getColumn(7).getString();
-                    if (!attributesStr.empty()) {
-                        size_t start = 0;
-                        size_t end = attributesStr.find(',');
-                        while (end != std::string::npos) {
-                            attrs.push_back(
-                                attributesStr.substr(start, end - start));
-                            start = end + 1;
-                            end = attributesStr.find(',', start);
-                        }
-                        attrs.push_back(attributesStr.substr(start));
-                    }
-                    return attrs;
-                }(),
-            .firstRegistration = std::chrono::system_clock::from_time_t(
+            .attributes = this->deserializeAttributes(
+                this->getCarsForSearchStmt->getColumn(7).getString()),
+            .firstRegistration = this->deserializeTimePoint(
                 this->getCarsForSearchStmt->getColumn(8).getInt()),
             .mileage = this->getCarsForSearchStmt->getColumn(9).getInt(),
             .horsePower = this->getCarsForSearchStmt->getColumn(10).getInt(),
             .fuelType = this->getCarsForSearchStmt->getColumn(11).getString(),
-            .advertisedSince = std::chrono::system_clock::from_time_t(
+            .advertisedSince = this->deserializeTimePoint(
                 this->getCarsForSearchStmt->getColumn(12).getInt()),
             .isPrivateSeller =
                 this->getCarsForSearchStmt->getColumn(13).getInt() == 1,
@@ -187,4 +162,40 @@ std::vector<Car> SQLiteCarSearchRepository::getCarsForSearch(
     this->getCarsForSearchStmt->reset();
 
     return cars;
+}
+
+int SQLiteCarSearchRepository::serializeTimePoint(
+    std::chrono::system_clock::time_point tp) {
+    return static_cast<int>(
+        std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch())
+            .count());
+}
+
+std::string SQLiteCarSearchRepository::serializeAttributes(
+    const std::vector<std::string> &attributes) {
+    std::string attributesStr;
+    for (size_t j = 0; j < attributes.size(); ++j)
+        attributesStr += attributes[j] + (j < attributes.size() - 1 ? "," : "");
+    return attributesStr;
+}
+
+std::chrono::system_clock::time_point
+SQLiteCarSearchRepository::deserializeTimePoint(int time) {
+    return std::chrono::system_clock::time_point(std::chrono::seconds(time));
+}
+
+std::vector<std::string> SQLiteCarSearchRepository::deserializeAttributes(
+    const std::string &attributesStr) {
+    std::vector<std::string> attrs;
+    if (!attributesStr.empty()) {
+        size_t start = 0;
+        size_t end = attributesStr.find(',');
+        while (end != std::string::npos) {
+            attrs.push_back(attributesStr.substr(start, end - start));
+            start = end + 1;
+            end = attributesStr.find(',', start);
+        }
+        attrs.push_back(attributesStr.substr(start));
+    }
+    return attrs;
 }

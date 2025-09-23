@@ -7,7 +7,7 @@
 namespace test {
 namespace helper {
 
-const Car WORSE_CAR = Car{
+const Car WORST_CAR = Car{
     .providerId = "worst_car",
     .timestamp = std::chrono::system_clock::now(),
     .manufacturer = "WorstManufacturer",

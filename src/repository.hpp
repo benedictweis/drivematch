@@ -35,4 +35,10 @@ class SQLiteCarSearchRepository : public CarsSearchRepository {
     std::unique_ptr<SQLite::Statement> insertSearchesCarsStmt;
     std::unique_ptr<SQLite::Statement> getSearchesStmt;
     std::unique_ptr<SQLite::Statement> getCarsForSearchStmt;
+
+    int serializeTimePoint(std::chrono::system_clock::time_point tp);
+    std::string serializeAttributes(const std::vector<std::string>& attributes);
+
+    std::chrono::system_clock::time_point deserializeTimePoint(int time);
+    std::vector<std::string> deserializeAttributes(const std::string& attributesStr);
 };
