@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "analyzer.hpp"
 #include "doctest/doctest.h"
 #include "helper.hpp"
@@ -46,7 +44,7 @@ TEST_SUITE("CarsAnalyzer Test Suite") {
         CarsAnalyzer analyzerWithTwoCars(
             {test::helper::WORST_CAR, test::helper::BEST_CAR});
 
-        analyzerWithTwoCars.setWeights(-1, 1, 1, 1, 100, 1, 100);
+        analyzerWithTwoCars.setWeights({-1, 1, 1, 1, 100, 1, 100});
 
         std::vector<ScoredCar> scoredCars = analyzerWithTwoCars.getScoredCars();
         CHECK(scoredCars.size() == 2);
@@ -61,22 +59,22 @@ TEST_SUITE("CarsAnalyzer Test Suite") {
         CarsAnalyzer analyzerWithDifferentCars(
             {BMW_X5, BMW_M3, AUDI_A6, MERCEDES_E300});
 
-        analyzerWithDifferentCars.setFilters({"BMW"}, {});
+        analyzerWithDifferentCars.setFilters({{"BMW"}, {}});
         std::vector<ScoredCar> scoredCars =
             analyzerWithDifferentCars.getScoredCars();
         CHECK(scoredCars.size() == 2);
 
-        analyzerWithDifferentCars.setFilters({"BMW"}, {"X5"});
+        analyzerWithDifferentCars.setFilters({{"BMW"}, {"X5"}});
         scoredCars = analyzerWithDifferentCars.getScoredCars();
         CHECK(scoredCars.size() == 1);
         CHECK(scoredCars[0].car.providerId == BMW_X5.providerId);
 
-        analyzerWithDifferentCars.setFilters({"BMW", "Audi"}, {"X5"});
+        analyzerWithDifferentCars.setFilters({{"BMW", "Audi"}, {"X5"}});
         scoredCars = analyzerWithDifferentCars.getScoredCars();
         CHECK(scoredCars.size() == 1);
         CHECK(scoredCars[0].car.providerId == BMW_X5.providerId);
 
-        analyzerWithDifferentCars.setFilters({"BMW", "Audi"}, {});
+        analyzerWithDifferentCars.setFilters({{"BMW", "Audi"}, {}});
         scoredCars = analyzerWithDifferentCars.getScoredCars();
         CHECK(scoredCars.size() == 3);
     }

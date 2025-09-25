@@ -13,24 +13,12 @@ CarsAnalyzer::CarsAnalyzer(const std::vector<Car> &cars) : cars(cars) {}
 
 void CarsAnalyzer::setCars(const std::vector<Car> &cars) { this->cars = cars; }
 
-void CarsAnalyzer::setWeights(float weightHp, float weightPrice,
-                              float weightMileage, float weightAge,
-                              float preferredAge, float weightAdvertisementAge,
-                              float preferredAdvertisementAge) {
-    this->weightHorsePower = weightHp;
-    this->weightPrice = weightPrice;
-    this->weightMileage = weightMileage;
-    this->weightAge = weightAge;
-    this->preferredAge = preferredAge;
-    this->weightAdvertisementAge = weightAdvertisementAge;
-    this->preferredAdvertisementAge = preferredAdvertisementAge;
+void CarsAnalyzer::setWeights(const AnalyzerWeights &weights) {
+    this->weights = weights;
 }
 
-void CarsAnalyzer::setFilters(
-    const std::vector<std::string> &filterByManufacturers,
-    const std::vector<std::string> &filterByModels) {
-    this->filterByManufacturers = filterByManufacturers;
-    this->filterByModels = filterByModels;
+void CarsAnalyzer::setFilters(const AnalyzerFilters &filters) {
+    this->filters = filters;
 }
 
 std::vector<ScoredCar> CarsAnalyzer::getScoredCars() {
@@ -152,9 +140,9 @@ void CarsAnalyzer::calculateMinMaxValues() {
 }
 
 bool CarsAnalyzer::filterCar(const Car &car) const {
-    if (!this->filterByManufacturers.empty()) {
+    if (!this->filters.filterByManufacturers.empty()) {
         bool containedInManufacturer = false;
-        for (const std::string manufacturer : this->filterByManufacturers) {
+        for (const std::string manufacturer : this->filters.filterByManufacturers) {
             if (car.manufacturer == manufacturer) {
                 containedInManufacturer = true;
             }
@@ -163,9 +151,9 @@ bool CarsAnalyzer::filterCar(const Car &car) const {
             return true;
         }
     }
-    if (!this->filterByModels.empty()) {
+    if (!this->filters.filterByModels.empty()) {
         bool containedInModel = false;
-        for (const std::string model : this->filterByModels) {
+        for (const std::string model : this->filters.filterByModels) {
             if (car.model == model) {
                 containedInModel = true;
             }
@@ -181,14 +169,14 @@ float CarsAnalyzer::scoreCar(const Car &car) const {
     const int ageDays = std::chrono::duration_cast<std::chrono::days>(
                             currentTimestamp - car.firstRegistration)
                             .count();
-    const int ageDaysDiff = std::abs(ageDays - preferredAge);
+    const int ageDaysDiff = std::abs(ageDays - this->weights.preferredAge);
 
     const int advertisementAgeDays =
         std::chrono::duration_cast<std::chrono::days>(currentTimestamp -
                                                       car.advertisedSince)
             .count();
     const int advertisementAgeDaysDiff =
-        std::abs(advertisementAgeDays - preferredAdvertisementAge);
+        std::abs(advertisementAgeDays - this->weights.preferredAdvertisementAge);
 
     const float normalizedHorsePower =
         normalize(car.horsePower, minHorsePower, maxHorsePower);
@@ -199,8 +187,8 @@ float CarsAnalyzer::scoreCar(const Car &car) const {
     const float normalizedAdvertisementAge = normalize(
         advertisementAgeDaysDiff, minAdvertisementAge, maxAdvertisementAge);
 
-    return (weightHorsePower * normalizedHorsePower) +
-           (weightPrice * normalizedPrice) +
-           (weightMileage * normalizedMileage) + (weightAge * normalizedAge) +
-           (weightAdvertisementAge * normalizedAdvertisementAge);
+    return (this->weights.weightHorsePower * normalizedHorsePower) +
+           (this->weights.weightPrice * normalizedPrice) +
+           (this->weights.weightMileage * normalizedMileage) + (this->weights.weightAge * normalizedAge) +
+           (this->weights.weightAdvertisementAge * normalizedAdvertisementAge);
 }

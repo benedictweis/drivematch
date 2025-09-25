@@ -23,9 +23,11 @@ std::vector<Search> DriveMatchService::getSearches() {
     return carsSearchRepository.getSearches();
 }
 
-std::vector<ScoredCar> DriveMatchService::getScoredCarsForSearch(std::string searchId) {
+std::vector<ScoredCar> DriveMatchService::getScoredCarsForSearch(std::string searchId, const AnalyzerWeights& weights, const AnalyzerFilters& filters) {
     std::vector<Car> cars = carsSearchRepository.getCarsForSearch(searchId);
     carsAnalyzer.setCars(cars);
+    carsAnalyzer.setWeights(weights);
+    carsAnalyzer.setFilters(filters);
     return carsAnalyzer.getScoredCars();
 }
 

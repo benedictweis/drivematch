@@ -7,15 +7,12 @@
 
 class CarsAnalyzer {
    public:
+    CarsAnalyzer() = default;
     CarsAnalyzer(const std::vector<Car> &cars);
     ~CarsAnalyzer() = default;
     void setCars(const std::vector<Car> &cars);
-    void setWeights(float weightHorsePower, float weightPrice,
-                    float weightMileage, float weightAge, float preferredAge,
-                    float weightAdvertisementAge,
-                    float preferredAdvertisementAge);
-    void setFilters(const std::vector<std::string> &filterByManufacturers,
-                    const std::vector<std::string> &filterByModels);
+    void setWeights(const AnalyzerWeights &weights);
+    void setFilters(const AnalyzerFilters &filters);
 
     std::vector<ScoredCar> getScoredCars();
     std::vector<GroupedCarsByManufacturerAndModel>
@@ -25,15 +22,8 @@ class CarsAnalyzer {
     std::vector<Car> cars;
     std::chrono::system_clock::time_point currentTimestamp;
 
-    float weightHorsePower = 1.0f;
-    float weightPrice = -1.0f;
-    float weightMileage = -1.0f;
-    float weightAge = -1.0f;
-    float preferredAge = 0.0f;
-    float weightAdvertisementAge = -0.0f;
-    float preferredAdvertisementAge = 0.0f;
-    std::vector<std::string> filterByManufacturers;
-    std::vector<std::string> filterByModels;
+    AnalyzerWeights weights{1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f};
+    AnalyzerFilters filters{{}, {}};
 
     int minHorsePower = INT_MAX;
     int maxHorsePower = 0;

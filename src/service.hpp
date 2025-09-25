@@ -14,10 +14,15 @@ class DriveMatchService {
                       CarsSearchRepository& carsSearchRepository,
                       CarsAnalyzer& carsAnalyzer);
     ~DriveMatchService() = default;
-    
+
     std::string scrapeAndStoreCars(std::string name, std::string url);
     std::vector<Search> getSearches();
-    std::vector<ScoredCar> getScoredCarsForSearch(std::string searchId);
+    std::vector<ScoredCar> getScoredCarsForSearch(
+        std::string searchId,
+        const AnalyzerWeights& weights = AnalyzerWeights{1.0f, -1.0f, -1.0f,
+                                                         -1.0f, 0.0f, 0.0f,
+                                                         0.0f},
+        const AnalyzerFilters& filters = AnalyzerFilters{{}, {}});
     std::vector<GroupedCarsByManufacturerAndModel> getGroupedCarsForSearch(
         std::string searchId);
 

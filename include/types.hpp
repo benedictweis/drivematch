@@ -29,6 +29,21 @@ struct Car {
     std::string imageURL;
 };
 
+struct AnalyzerWeights {
+    float weightHorsePower;
+    float weightPrice;
+    float weightMileage;
+    float weightAge;
+    float preferredAge;
+    float weightAdvertisementAge;
+    float preferredAdvertisementAge;
+};
+
+struct AnalyzerFilters {
+    std::vector<std::string> filterByManufacturers;
+    std::vector<std::string> filterByModels;
+};
+
 struct ScoredCar {
     Car car;
     float score;
