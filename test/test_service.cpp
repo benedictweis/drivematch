@@ -35,7 +35,7 @@ TEST_SUITE("DriveMatchService Test Suite") {
 
     TEST_CASE(
         "DriveMatchService returns expected results within time constraints "
-        "[unit]") {
+        "[component]") {
         MobileDeCarsScraper scraper;
         SQLiteCarSearchRepository repository(":memory:");
         CarsAnalyzer analyzer;
