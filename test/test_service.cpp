@@ -1,6 +1,9 @@
 #include "doctest/doctest.h"
 #include "helper.hpp"
 #include "service.hpp"
+#include "analyzer_sequential.hpp"
+#include "repository_sqlite.hpp"
+#include "scraper_mobilede.hpp"
 
 TEST_SUITE("DriveMatchService Test Suite") {
     TEST_CASE_FIXTURE(
@@ -10,7 +13,7 @@ TEST_SUITE("DriveMatchService Test Suite") {
             doctest::timeout(2.5)) {
         MobileDeCarsScraper scraper;
         SQLiteCarSearchRepository repository(":memory:");
-        CarsAnalyzer analyzer;
+        SequentialCarsAnalyzer analyzer;
         DriveMatchService service(scraper, repository, analyzer);
 
         const std::string searchId = "test_search";
@@ -38,7 +41,7 @@ TEST_SUITE("DriveMatchService Test Suite") {
         "[component]") {
         MobileDeCarsScraper scraper;
         SQLiteCarSearchRepository repository(":memory:");
-        CarsAnalyzer analyzer;
+        SequentialCarsAnalyzer analyzer;
         DriveMatchService service(scraper, repository, analyzer);
 
         const std::string searchId = "test_search";

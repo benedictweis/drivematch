@@ -4,19 +4,20 @@
 #include <vector>
 
 #include "types.hpp"
+#include "analyzer.hpp"
 
-class CarsAnalyzer {
+class SequentialCarsAnalyzer: public CarsAnalyzer {
    public:
-    CarsAnalyzer() = default;
-    CarsAnalyzer(const std::vector<Car> &cars);
-    ~CarsAnalyzer() = default;
-    void setCars(const std::vector<Car> &cars);
-    void setWeights(const AnalyzerWeights &weights);
-    void setFilters(const AnalyzerFilters &filters);
+    SequentialCarsAnalyzer() = default;
+    SequentialCarsAnalyzer(const std::vector<Car> &cars);
+    ~SequentialCarsAnalyzer() override = default;
+    void setCars(const std::vector<Car> &cars) override;
+    void setWeights(const AnalyzerWeights &weights) override;
+    void setFilters(const AnalyzerFilters &filters) override;
 
-    std::vector<ScoredCar> getScoredCars();
+    std::vector<ScoredCar> getScoredCars() override;
     std::vector<GroupedCarsByManufacturerAndModel>
-    getGroupedCarsByManufacturerAndModel();
+    getGroupedCarsByManufacturerAndModel() override;
 
    private:
     std::vector<Car> cars;

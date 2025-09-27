@@ -4,9 +4,18 @@
 #include <vector>
 
 #include "analyzer.hpp"
+#include "analyzer_sequential.hpp"
 #include "repository.hpp"
+#include "repository_sqlite.hpp"
+#include "scraper.hpp"
+#include "scraper_mobilede.hpp"
 #include "types.hpp"
 #include "uuid.hpp"
+
+DriveMatchService::DriveMatchService(std::string databasePath)
+    : carsScraper(*(new MobileDeCarsScraper())),
+      carsSearchRepository(*(new SQLiteCarSearchRepository(databasePath))),
+      carsAnalyzer(*(new SequentialCarsAnalyzer())) {}
 
 DriveMatchService::DriveMatchService(CarsScraper& carsScraper, CarsSearchRepository& carsSearchRepository,
                                      CarsAnalyzer& carsAnalyzer)

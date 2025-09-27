@@ -1,6 +1,6 @@
 #include "doctest/doctest.h"
 #include "helper.hpp"
-#include "repository.hpp"
+#include "repository_sqlite.hpp"
 
 TEST_SUITE("SQLiteCarSearchRepository Test Suite") {
     TEST_CASE_FIXTURE(test::helper::ManyCarsFixture,

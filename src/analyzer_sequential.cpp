@@ -1,4 +1,4 @@
-#include "analyzer.hpp"
+#include "analyzer_sequential.hpp"
 
 #include <map>
 
@@ -9,19 +9,19 @@ float normalize(float value, float minValue, float maxValue) {
     return (value - minValue + EPSILON) * 100 / (maxValue - minValue + EPSILON);
 }
 
-CarsAnalyzer::CarsAnalyzer(const std::vector<Car> &cars) : cars(cars) {}
+SequentialCarsAnalyzer::SequentialCarsAnalyzer(const std::vector<Car> &cars) : cars(cars) {}
 
-void CarsAnalyzer::setCars(const std::vector<Car> &cars) { this->cars = cars; }
+void SequentialCarsAnalyzer::setCars(const std::vector<Car> &cars) { this->cars = cars; }
 
-void CarsAnalyzer::setWeights(const AnalyzerWeights &weights) {
+void SequentialCarsAnalyzer::setWeights(const AnalyzerWeights &weights) {
     this->weights = weights;
 }
 
-void CarsAnalyzer::setFilters(const AnalyzerFilters &filters) {
+void SequentialCarsAnalyzer::setFilters(const AnalyzerFilters &filters) {
     this->filters = filters;
 }
 
-std::vector<ScoredCar> CarsAnalyzer::getScoredCars() {
+std::vector<ScoredCar> SequentialCarsAnalyzer::getScoredCars() {
     this->currentTimestamp = std::chrono::system_clock::now();
     std::vector<ScoredCar> scoredCars;
     scoredCars.reserve(this->cars.size());
@@ -38,7 +38,7 @@ std::vector<ScoredCar> CarsAnalyzer::getScoredCars() {
 }
 
 std::vector<GroupedCarsByManufacturerAndModel>
-CarsAnalyzer::getGroupedCarsByManufacturerAndModel() {
+SequentialCarsAnalyzer::getGroupedCarsByManufacturerAndModel() {
     this->currentTimestamp = std::chrono::system_clock::now();
 
     std::map<std::pair<std::string, std::string>, std::vector<Car>>
@@ -100,7 +100,7 @@ CarsAnalyzer::getGroupedCarsByManufacturerAndModel() {
     return groupedCars;
 }
 
-void CarsAnalyzer::calculateMinMaxValues() {
+void SequentialCarsAnalyzer::calculateMinMaxValues() {
     minHorsePower = INT_MAX;
     maxHorsePower = 0;
     minPrice = INT_MAX;
@@ -139,7 +139,7 @@ void CarsAnalyzer::calculateMinMaxValues() {
     }
 }
 
-bool CarsAnalyzer::filterCar(const Car &car) const {
+bool SequentialCarsAnalyzer::filterCar(const Car &car) const {
     if (!this->filters.filterByManufacturers.empty()) {
         bool containedInManufacturer = false;
         for (const std::string manufacturer : this->filters.filterByManufacturers) {
@@ -165,7 +165,7 @@ bool CarsAnalyzer::filterCar(const Car &car) const {
     return false;
 }
 
-float CarsAnalyzer::scoreCar(const Car &car) const {
+float SequentialCarsAnalyzer::scoreCar(const Car &car) const {
     const int ageDays = std::chrono::duration_cast<std::chrono::days>(
                             currentTimestamp - car.firstRegistration)
                             .count();

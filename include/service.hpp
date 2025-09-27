@@ -10,6 +10,7 @@
 
 class DriveMatchService {
    public:
+    DriveMatchService(std::string databasePath);
     DriveMatchService(CarsScraper& carsScraper,
                       CarsSearchRepository& carsSearchRepository,
                       CarsAnalyzer& carsAnalyzer);

@@ -30,13 +30,15 @@ FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download
 FetchContent_MakeAvailable(json)
 
 # Qt
-find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Widgets)
 
 # --- Sources ---
 file(GLOB_RECURSE PROJECT_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE PROJECT_HEADERS CONFIGURE_DEPENDS "include/*.hpp")
 
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "test/*.cpp")
+
+file(GLOB_RECURSE DESKTOP_SOURCES CONFIGURE_DEPENDS "desktop/*.cpp")
 
 # --- Targets ---
 # Main library
@@ -69,6 +71,14 @@ target_link_libraries(${PROJECT_NAME}Tests
 target_include_directories(${PROJECT_NAME}Tests
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+# Desktop application
+add_executable(${PROJECT_NAME}Desktop ${DESKTOP_SOURCES})
+target_link_libraries(${PROJECT_NAME}Desktop
+    PRIVATE
+        ${PROJECT_NAME}
+        Qt6::Widgets
 )
 
 # --- Testing ---

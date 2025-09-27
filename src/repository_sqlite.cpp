@@ -1,4 +1,4 @@
-#include "repository.hpp"
+#include "repository_sqlite.hpp"
 
 #include <SQLiteCpp/SQLiteCpp.h>
 
