@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 project(DriveMatch VERSION 0.0.1 LANGUAGES CXX)
 
 # --- Global settings ---
@@ -24,6 +24,10 @@ FetchContent_Declare(
     GIT_TAG 3.3.3
 )
 FetchContent_MakeAvailable(SQLiteCpp)
+
+# nlohmann_json
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_MakeAvailable(json)
 
 # Qt
 find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets)
@@ -51,6 +55,7 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC
         SQLiteCpp
         Qt6::Widgets
+        nlohmann_json::nlohmann_json
 )
 
 # Test executable
