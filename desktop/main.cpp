@@ -1,17 +1,16 @@
+#include "drivematch_window.hpp"
+#include "service.hpp"
+#include "types.hpp"
 
 #include <QApplication>
 #include <QMainWindow>
-
-#include "types.hpp"
-#include "service.hpp"
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
     DriveMatchService service("drivematch.db");
 
-    QMainWindow mainWindow;
-    mainWindow.show();
+    DriveMatchWindow mainWindow;
 
     return app.exec();
 }
