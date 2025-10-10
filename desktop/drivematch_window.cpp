@@ -4,6 +4,7 @@
 
 #include "drivematch_window.hpp"
 #include "scrape_widget.hpp"
+#include "analyze_widget.hpp"
 
 DriveMatchWindow::DriveMatchWindow() {
     this->resize(800, 600);
@@ -13,7 +14,7 @@ DriveMatchWindow::DriveMatchWindow() {
 
     QTabWidget *tabWidget = new QTabWidget(this);
     tabWidget->addTab(new ScrapeWidget(), QApplication::translate("main", "Scrape"));
-    tabWidget->addTab(new QWidget(), QApplication::translate("main", "Analyze"));
+    tabWidget->addTab(new AnalyzeWidget(), QApplication::translate("main", "Analyze"));
 
     this->setCentralWidget(tabWidget);
 }
