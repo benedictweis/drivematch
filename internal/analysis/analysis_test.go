@@ -4,14 +4,16 @@ import (
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/benedictweis/drivematch/internal/common"
 )
 
 const oneMillion = 1 * 1000 * 1000
 
-func generateRandomCars(n int, manufacturer, model string) []*Car {
-	cars := make([]*Car, n)
+func generateRandomCars(n int, manufacturer, model string) []*common.Car {
+	cars := make([]*common.Car, n)
 	for i := 0; i < n; i++ {
-		cars[i] = &Car{
+		cars[i] = &common.Car{
 			Manufacturer:      manufacturer,
 			Model:             model,
 			HorsePower:        rand.Float64()*(600-100) + 100,           // Random horsepower between 100 and 600
