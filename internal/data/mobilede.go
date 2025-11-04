@@ -2,7 +2,10 @@ package data
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/benedictweis/drivematch/internal/common"
 )
@@ -18,12 +21,13 @@ type MobileDeCar struct {
 		Power             string `json:"pw"`
 		Mileage           string `json:"ml"`
 		FirstRegistration string `json:"fr"`
+		FuelType          string `json:"ft"`
 	} `json:"attr"`
 }
 
-func GetCarsFromMobileDeData(data string) ([]common.Car, error) {
+func GetCarsFromMobileDeData(data []byte) ([]common.Car, error) {
 	mobileDeCars := make([]MobileDeCar, 0)
-	err := json.Unmarshal([]byte(data), &mobileDeCars)
+	err := json.Unmarshal(data, &mobileDeCars)
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +44,43 @@ func GetCarsFromMobileDeData(data string) ([]common.Car, error) {
 }
 
 func convertMobileDeCarToCommonCar(mdc MobileDeCar) (common.Car, error) {
+	firstRegistration, err := time.Parse("01/2006", mdc.Attr.FirstRegistration)
+	if err != nil {
+		return common.Car{}, err
+	}
+
+	mileageStr := strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' {
+			return r
+		}
+		return -1
+	}, mdc.Attr.Mileage)
+	mileage, err := strconv.ParseFloat(mileageStr, 64)
+	if err != nil {
+		return common.Car{}, err
+	}
+
+	horsePowerParts := strings.Split(mdc.Attr.Power, "kW")
+	horsePowerStr := strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' {
+			return r
+		}
+		return -1
+	}, horsePowerParts[1])
+	horsePower, err := strconv.ParseFloat(horsePowerStr, 64)
+	if err != nil {
+		return common.Car{}, err
+	}
+
 	return common.Car{
-		ID:           strconv.Itoa(mdc.ID),
-		Manufacturer: mdc.Manufacturer,
-		Model:        mdc.Model,
-		Price:        mdc.Price.GrossAmount,
+		ID:                strconv.Itoa(mdc.ID),
+		Manufacturer:      mdc.Manufacturer,
+		Model:             mdc.Model,
+		Price:             mdc.Price.GrossAmount,
+		FirstRegistration: firstRegistration,
+		Mileage:           mileage,
+		HorsePower:        horsePower,
+		FuelType:          mdc.Attr.FuelType,
+		ListingURL:        fmt.Sprintf("https://suchen.mobile.de/fahrzeuge/details.html?id=%d", mdc.ID),
 	}, nil
 }

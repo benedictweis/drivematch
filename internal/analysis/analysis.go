@@ -1,4 +1,4 @@
-package main
+package analysis
 
 import (
 	"math"
@@ -7,7 +7,7 @@ import (
 	"github.com/benedictweis/drivematch/internal/common"
 )
 
-func ScoreCars(cars []*common.Car, weightHorsePower, weightPrice, weightMileage, weightAge float64) []float64 {
+func ScoreCars(cars []common.Car, weightHorsePower, weightPrice, weightMileage, weightAge float64) []float64 {
 	n := len(cars)
 	if n == 0 {
 		return nil
@@ -68,13 +68,13 @@ func ScoreCars(cars []*common.Car, weightHorsePower, weightPrice, weightMileage,
 		price := (c.Price - minPrice) / priceDenom
 		mileage := (c.Mileage - minMileage) / mileageDenom
 		age := (ages[i] - minAge) / ageDenom
-		scores[i] = weightHorsePower*horsePower + weightPrice*price + weightMileage*mileage + weightAge*age
+		scores[i] = (weightHorsePower * horsePower) + (weightPrice * price) + (weightMileage * mileage) + (weightAge * age)
 	}
 
 	return scores
 }
 
-func GroupCars(cars []*common.Car, scores []float64) []common.CarGroup {
+func GroupCars(cars []common.Car, scores []float64) []common.CarGroup {
 	type groupKey struct{ manufacturer, model string }
 
 	now := time.Now()

@@ -1,4 +1,4 @@
-package main
+package analysis
 
 import (
 	"math/rand"
@@ -10,10 +10,10 @@ import (
 
 const oneMillion = 1 * 1000 * 1000
 
-func generateRandomCars(n int, manufacturer, model string) []*common.Car {
-	cars := make([]*common.Car, n)
+func generateRandomCars(n int, manufacturer, model string) []common.Car {
+	cars := make([]common.Car, n)
 	for i := 0; i < n; i++ {
-		cars[i] = &common.Car{
+		cars[i] = common.Car{
 			Manufacturer:      manufacturer,
 			Model:             model,
 			HorsePower:        rand.Float64()*(600-100) + 100,           // Random horsepower between 100 and 600

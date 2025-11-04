@@ -10,6 +10,8 @@ type Car struct {
 	Price             float64
 	Mileage           float64
 	FirstRegistration time.Time
+	FuelType          string
+	ListingURL        string
 }
 
 type CarGroup struct {

@@ -1,12 +1,11 @@
-import time
-import sys
 import base64
 import json
+import sys
+import time
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
-
 
 CONSENT_BUTTON_CLASS_NAME = "mde-consent-accept-btn"
 NEXT_PAGE_BUTTON_CSS_SELECTOR = "button[aria-label='Weiter']"
@@ -21,17 +20,17 @@ FIREFOX_OPTIONS = Options()
 FIREFOX_OPTIONS.add_argument("--window-size=1920,1080")
 
 
-def getPagesHTMLFromURL(url: str) -> list[str]:
+def get_pages_html_from_url(url: str) -> list[str]:
     driver = webdriver.Firefox(options=FIREFOX_OPTIONS)
     driver.delete_all_cookies()
     driver.implicitly_wait(10)
     driver.get(url)
 
-    consentButton = driver.find_element(
+    consent_button = driver.find_element(
         By.CLASS_NAME,
         CONSENT_BUTTON_CLASS_NAME,
     )
-    consentButton.click()
+    consent_button.click()
 
     cars = []
     while True:
@@ -53,10 +52,10 @@ def getPagesHTMLFromURL(url: str) -> list[str]:
             except Exception:
                 continue
 
-            nextPage = driver.find_element(
+            next_page = driver.find_element(
                 By.CSS_SELECTOR, NEXT_PAGE_BUTTON_CSS_SELECTOR
             )
-            nextPage.click()
+            next_page.click()
         except Exception:
             break
 
@@ -67,9 +66,9 @@ def getPagesHTMLFromURL(url: str) -> list[str]:
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         sys.exit(1)
-    baseURL = base64.b64decode(sys.argv[1]).decode("utf-8")
+    base_url = base64.b64decode(sys.argv[1]).decode("utf-8")
 
-    cars = getPagesHTMLFromURL(baseURL)
+    cars = get_pages_html_from_url(base_url)
     cars = [car for car in cars if "id" in car]
     unique_cars = {car["id"]: car for car in cars}.values()
     cars = list(unique_cars)
