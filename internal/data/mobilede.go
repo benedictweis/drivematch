@@ -44,9 +44,15 @@ func GetCarsFromMobileDeData(data []byte) ([]common.Car, error) {
 }
 
 func convertMobileDeCarToCommonCar(mdc MobileDeCar) (common.Car, error) {
-	firstRegistration, err := time.Parse("01/2006", mdc.Attr.FirstRegistration)
-	if err != nil {
-		return common.Car{}, err
+	var firstRegistration time.Time
+	if strings.ToLower(mdc.Attr.FirstRegistration) == "neu" || mdc.Attr.FirstRegistration == "" {
+		firstRegistration = time.Now()
+	} else {
+		var err error
+		firstRegistration, err = time.Parse("01/2006", mdc.Attr.FirstRegistration)
+		if err != nil {
+			return common.Car{}, err
+		}
 	}
 
 	mileageStr := strings.Map(func(r rune) rune {

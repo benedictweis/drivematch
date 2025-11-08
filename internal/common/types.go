@@ -23,4 +23,5 @@ type CarGroup struct {
 	AveragePrice      float64
 	AverageMileage    float64
 	AverageAge        float64
+	FuelType          string
 }

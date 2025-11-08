@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"os"
 	"sort"
 
@@ -9,26 +11,78 @@ import (
 	"github.com/benedictweis/drivematch/internal/common"
 	"github.com/benedictweis/drivematch/internal/data"
 	"github.com/olekukonko/tablewriter"
+	"github.com/urfave/cli/v3"
 )
 
+var (
+	url    string
+	file   string
+	sortBy string
+)
+
+var cmd *cli.Command = &cli.Command{
+	Name:  "drivematch",
+	Usage: "A tool to scrape, analyze and group car listings from mobile.de",
+	Commands: []*cli.Command{
+		{
+			Name:  "scrape",
+			Usage: "Scrape car data from a mobile.de url",
+			Arguments: []cli.Argument{
+				&cli.StringArg{
+					Name:        "url",
+					Destination: &url,
+				},
+			},
+			Action: scrape,
+		},
+		{
+			Name:  "score",
+			Usage: "Score cars contained in a data file",
+			Arguments: []cli.Argument{
+				&cli.StringArg{
+					Name:        "file",
+					Destination: &file,
+				},
+			},
+			Action: score,
+		},
+		{
+			Name:  "group",
+			Usage: "Show car groups contained in a data file",
+			Arguments: []cli.Argument{
+				&cli.StringArg{
+					Name:        "file",
+					Destination: &file,
+				},
+			},
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:        "sort-by",
+					Usage:       "Sort groups by 'score' or 'count'",
+					Value:       "score",
+					Aliases:     []string{"s"},
+					Destination: &sortBy,
+				},
+			},
+			Action: group,
+		},
+	},
+}
+
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: drivematch <filename>")
-		os.Exit(1)
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
+		log.Fatal(err)
 	}
+}
 
-	filename := os.Args[1]
+func scrape(ctx context.Context, cmd *cli.Command) error {
+	return nil
+}
 
-	content, err := os.ReadFile(filename)
+func score(ctx context.Context, cmd *cli.Command) error {
+	cars, err := getCarsFromFile(file)
 	if err != nil {
-		fmt.Printf("Error reading file: %v\n", err)
-		os.Exit(1)
-	}
-
-	cars, err := data.GetCarsFromMobileDeData(content)
-	if err != nil {
-		fmt.Printf("Error parsing car data: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("error getting cars from file: %w", err)
 	}
 
 	scores := analysis.ScoreCars(cars, 1.0, -1.0, -1.0, 0.0)
@@ -70,6 +124,73 @@ func main() {
 	}
 
 	table.Render()
+	return nil
+}
+
+func group(ctx context.Context, cmd *cli.Command) error {
+	cars, err := getCarsFromFile(file)
+	if err != nil {
+		return fmt.Errorf("error getting cars from file: %w", err)
+	}
+
+	scores := analysis.ScoreCars(cars, 1.0, -1.0, -1.0, 0.0)
+	groups := analysis.GroupCars(cars, scores)
+
+	switch sortBy {
+	case "count":
+		sort.Slice(groups, func(i, j int) bool {
+			return groups[i].Amount > groups[j].Amount
+		})
+	default:
+		sort.Slice(groups, func(i, j int) bool {
+			return groups[i].AverageScore > groups[j].AverageScore
+		})
+	}
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.Header([]string{"Make", "Model", "Count", "Avg Age", "Avg Mileage", "Avg Price", "Avg Horsepower", "Fuel Type"})
+
+	for _, g := range groups {
+		table.Append([]string{
+			g.Manufacturer,
+			g.Model,
+			fmt.Sprintf("%d", g.Amount),
+			fmt.Sprintf("%.2f", g.AverageAge),
+			fmt.Sprintf("%.0f km", g.AverageMileage),
+			fmt.Sprintf("%.0f EUR", g.AveragePrice),
+			fmt.Sprintf("%.0f hp", g.AverageHorsePower),
+			g.FuelType,
+		})
+	}
+
+	table.Render()
+	return nil
+}
+
+func getCarsFromFile(path string) ([]common.Car, error) {
+	content, err := readFile(file)
+	if err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err)
+	}
+
+	cars, err := data.GetCarsFromMobileDeData(content)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing car data: %w", err)
+	}
+	return cars, nil
+}
+
+func readFile(path string) ([]byte, error) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file does not exist: '%s'", path)
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err)
+	}
+
+	return content, nil
 }
 
 func clickableLink(url, text string) string {

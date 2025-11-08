@@ -100,6 +100,12 @@ func GroupCars(cars []common.Car, scores []float64) []common.CarGroup {
 		g.AveragePrice += c.Price
 		g.AverageMileage += c.Mileage
 		g.AverageAge += age
+
+		if g.FuelType == "" {
+			g.FuelType = c.FuelType
+		} else if g.FuelType != c.FuelType {
+			g.FuelType = "Mixed"
+		}
 	}
 
 	result := make([]common.CarGroup, 0, len(groups))
