@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"sort"
 
 	"github.com/benedictweis/drivematch/internal/analysis"
@@ -31,6 +34,10 @@ var cmd *cli.Command = &cli.Command{
 				&cli.StringArg{
 					Name:        "url",
 					Destination: &url,
+				},
+				&cli.StringArg{
+					Name:        "file",
+					Destination: &file,
 				},
 			},
 			Action: scrape,
@@ -76,6 +83,36 @@ func main() {
 }
 
 func scrape(ctx context.Context, cmd *cli.Command) error {
+	executablePath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("error getting executable path: %w", err)
+	}
+
+	dir := os.DirFS(filepath.Dir(executablePath))
+	mobileDeFile := "mobilede"
+	filePath := fmt.Sprintf("%s/%s", dir, mobileDeFile)
+
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return fmt.Errorf("error getting file info: %w", err)
+	}
+
+	if info.Mode()&0111 == 0 {
+		return fmt.Errorf("file 'mobilede' is not executable")
+	}
+
+	encodedURL := base64.StdEncoding.EncodeToString([]byte(url))
+	mobiledeCmd := exec.Command(filePath, encodedURL)
+
+	output, err := mobiledeCmd.Output()
+	if err != nil {
+		return fmt.Errorf("error capturing output from 'mobilede': %w", err)
+	}
+
+	if err := os.WriteFile(file, output, 0644); err != nil {
+		return fmt.Errorf("error writing output to file: %w", err)
+	}
+
 	return nil
 }
 
