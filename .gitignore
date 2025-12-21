@@ -274,3 +274,4 @@ $RECYCLE.BIN/
 ### Custom ###
 *.json
 *.db
+internal/**/*.tar.zst

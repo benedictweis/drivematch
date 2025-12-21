@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
 
 	"github.com/benedictweis/drivematch/internal/database"
+	"github.com/benedictweis/drivematch/internal/scraping"
 	"github.com/urfave/cli/v3"
 )
 
@@ -42,26 +41,8 @@ func scrape(ctx context.Context, cmd *cli.Command) error {
 	}
 	defer db.Close()
 
-	executablePath, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("error getting executable path: %w", err)
-	}
-
-	dir := os.DirFS(filepath.Dir(executablePath))
-	mobileDeFile := "mobilede"
-	filePath := fmt.Sprintf("%s/%s", dir, mobileDeFile)
-
-	info, err := os.Stat(filePath)
-	if err != nil {
-		return fmt.Errorf("error getting file info: %w", err)
-	}
-
-	if info.Mode()&0111 == 0 {
-		return fmt.Errorf("file 'mobilede' is not executable")
-	}
-
 	encodedURL := base64.StdEncoding.EncodeToString([]byte(searchURL))
-	mobiledeCmd := exec.Command(filePath, encodedURL)
+	mobiledeCmd := exec.Command(scraping.MobileDeBinaryPath(), encodedURL)
 
 	output, err := mobiledeCmd.Output()
 	if err != nil {

@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/benedictweis/drivematch/internal/scraping"
 	"github.com/urfave/cli/v3"
 )
 
@@ -49,6 +51,11 @@ var cmd *cli.Command = &cli.Command{
 }
 
 func main() {
+	if err := scraping.ExtractMobiledeScraper(); err != nil {
+		fmt.Println("error extracting mobile.de scraper:", err)
+		os.Exit(1)
+	}
+
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
