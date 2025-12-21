@@ -20,7 +20,7 @@ FIREFOX_OPTIONS = Options()
 FIREFOX_OPTIONS.add_argument("--window-size=1920,1080")
 
 
-def get_pages_html_from_url(url: str) -> list[str]:
+def get_cars_from_url(url: str) -> list[str]:
     driver = webdriver.Firefox(options=FIREFOX_OPTIONS)
     driver.delete_all_cookies()
     driver.implicitly_wait(10)
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         sys.exit(1)
     base_url = base64.b64decode(sys.argv[1]).decode("utf-8")
 
-    cars = get_pages_html_from_url(base_url)
+    cars = get_cars_from_url(base_url)
     cars = [car for car in cars if "id" in car]
     unique_cars = {car["id"]: car for car in cars}.values()
     cars = list(unique_cars)

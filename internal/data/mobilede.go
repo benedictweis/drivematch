@@ -10,6 +10,8 @@ import (
 	"github.com/benedictweis/drivematch/internal/common"
 )
 
+const MobileDeSearchType = "mobilede"
+
 type MobileDeCar struct {
 	ID           int    `json:"id"`
 	Manufacturer string `json:"make"`
