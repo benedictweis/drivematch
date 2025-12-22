@@ -4,8 +4,7 @@ DriveMatch is a cutting-edge web application designed to search the used car mar
 
 ## Roadmap
 
-- add list and get cli command
-- unique vehicle detection
+- unique vehicle detection via hsn tsn
 - add custom attributes to vehicle model
 - define http api schema
 - write http api server

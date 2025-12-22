@@ -25,3 +25,11 @@ type CarGroup struct {
 	AverageAge        float64
 	FuelType          string
 }
+
+type Search struct {
+	ID         string
+	Name       string
+	CreatedAt  time.Time
+	SearchType string
+	DataLen    int
+}

@@ -53,6 +53,20 @@ func Link(url, text string) string {
 	return fmt.Sprintf("\x1f%s\x1f%s", url, text)
 }
 
+func DataLength(len int) string {
+	bytes := float64(len)
+
+	if bytes < 1024 {
+		return fmt.Sprintf("%d B", len)
+	} else if bytes < 1024*1024 {
+		return fmt.Sprintf("%.1f KB", bytes/1024)
+	} else if bytes < 1024*1024*1024 {
+		return fmt.Sprintf("%.1f MB", bytes/(1024*1024))
+	} else {
+		return fmt.Sprintf("%.1f GB", bytes/(1024*1024*1024))
+	}
+}
+
 func decodeLink(s string) (string, string, bool) {
 	if len(s) < 3 || s[0] != '\x1f' {
 		return "", "", false

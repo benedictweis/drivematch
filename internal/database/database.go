@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/DataDog/zstd"
+	"github.com/benedictweis/drivematch/internal/common"
 	"github.com/google/uuid"
 	_ "modernc.org/sqlite"
 )
@@ -74,6 +75,35 @@ func (db *SQLiteDatabase) InsertSearch(name, searchType string, data []byte) (st
 	return id, nil
 }
 
+func (db *SQLiteDatabase) GetSearches() ([]common.Search, error) {
+	tx, err := db.conn.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query(`SELECT id, name, created_at, searchType, LENGTH(data) FROM searches`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query searches: %w", err)
+	}
+	defer rows.Close()
+
+	var searches []common.Search
+	for rows.Next() {
+		var s common.Search
+		if err := rows.Scan(&s.ID, &s.Name, &s.CreatedAt, &s.SearchType, &s.DataLen); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		searches = append(searches, s)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return searches, nil
+}
+
 func (db *SQLiteDatabase) GetSearchData(id string) ([]byte, error) {
 	tx, err := db.conn.Begin()
 	if err != nil {
@@ -82,7 +112,7 @@ func (db *SQLiteDatabase) GetSearchData(id string) ([]byte, error) {
 	defer tx.Rollback()
 
 	var compressedData []byte
-	err = tx.QueryRow(`SELECT data FROM searches WHERE id = ?`, id).Scan(&compressedData)
+	err = tx.QueryRow(`SELECT data FROM searches WHERE id LIKE ? || '%'`, id).Scan(&compressedData)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("no search found with id %s", id)
