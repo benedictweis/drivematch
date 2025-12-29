@@ -1,7 +1,4 @@
-import base64
-import json
-import sys
-import time
+import util
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -9,9 +6,6 @@ from selenium.webdriver.firefox.options import Options
 
 CONSENT_BUTTON_CLASS_NAME = "mde-consent-accept-btn"
 NEXT_PAGE_BUTTON_CSS_SELECTOR = "button[aria-label='Weiter']"
-JS_GET_NETWORK_ACTIVITY = (
-    "return window.performance.getEntriesByType('resource').length;"
-)
 JS_GET_CAR_ITEMS = (
     "return window.__INITIAL_STATE__.search.srp.data.searchResults.items;"
 )
@@ -34,12 +28,7 @@ def get_cars_from_url(url: str) -> list[str]:
 
     cars = []
     while True:
-        while True:
-            old_network_activity = driver.execute_script(JS_GET_NETWORK_ACTIVITY)
-            time.sleep(2)
-            new_network_activity = driver.execute_script(JS_GET_NETWORK_ACTIVITY)
-            if old_network_activity == new_network_activity:
-                break
+        util.wait_for_network_idle(driver)
 
         try:
             try:
@@ -60,17 +49,7 @@ def get_cars_from_url(url: str) -> list[str]:
             break
 
     driver.quit()
-    return cars
 
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        sys.exit(1)
-    base_url = base64.b64decode(sys.argv[1]).decode("utf-8")
-
-    cars = get_cars_from_url(base_url)
     cars = [car for car in cars if "id" in car]
     unique_cars = {car["id"]: car for car in cars}.values()
-    cars = list(unique_cars)
-
-    print(json.dumps(cars, indent=2, ensure_ascii=False))
+    return list(unique_cars)

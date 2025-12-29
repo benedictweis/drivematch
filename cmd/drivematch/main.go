@@ -45,6 +45,7 @@ var cmd *cli.Command = &cli.Command{
 	},
 	Commands: []*cli.Command{
 		scrapeCmd,
+		scrapeAdacCmd,
 		listCmd,
 		scoreCmd,
 		groupCmd,

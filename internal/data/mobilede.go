@@ -10,21 +10,24 @@ import (
 	"github.com/benedictweis/drivematch/internal/common"
 )
 
-const MobileDeSearchType = "mobilede"
+const (
+	MobileDeSearchType   = "mobilede"
+	KeyIdentifierMissing = "unknown"
+)
 
 type MobileDeCar struct {
-	ID           int    `json:"id"`
-	Manufacturer string `json:"make"`
-	Model        string `json:"model"`
-	Price        struct {
+	ID    int `json:"id"`
+	Price struct {
 		GrossAmount float64 `json:"grossAmount"`
 	} `json:"price"`
 	Attr struct {
-		Power             string `json:"pw"`
 		Mileage           string `json:"ml"`
 		FirstRegistration string `json:"fr"`
-		FuelType          string `json:"ft"`
 	} `json:"attr"`
+	KBA struct {
+		HSN string `json:"hsn"`
+		TSN string `json:"tsn"`
+	} `json:"kba"`
 }
 
 func GetCarsFromMobileDeData(data []byte) ([]common.Car, error) {
@@ -68,27 +71,19 @@ func convertMobileDeCarToCommonCar(mdc MobileDeCar) (common.Car, error) {
 		return common.Car{}, err
 	}
 
-	horsePowerParts := strings.Split(mdc.Attr.Power, "kW")
-	horsePowerStr := strings.Map(func(r rune) rune {
-		if r >= '0' && r <= '9' {
-			return r
-		}
-		return -1
-	}, horsePowerParts[1])
-	horsePower, err := strconv.ParseFloat(horsePowerStr, 64)
-	if err != nil {
-		return common.Car{}, err
+	var keyIdentifier string
+	if mdc.KBA.HSN != "" || mdc.KBA.TSN != "" {
+		keyIdentifier = fmt.Sprintf("%s/%s", mdc.KBA.HSN, mdc.KBA.TSN)
+	} else {
+		keyIdentifier = KeyIdentifierMissing
 	}
 
 	return common.Car{
 		ID:                strconv.Itoa(mdc.ID),
-		Manufacturer:      mdc.Manufacturer,
-		Model:             mdc.Model,
-		Price:             mdc.Price.GrossAmount,
-		FirstRegistration: firstRegistration,
-		Mileage:           mileage,
-		HorsePower:        horsePower,
-		FuelType:          mdc.Attr.FuelType,
+		KeyIdentifier:     keyIdentifier,
 		ListingURL:        fmt.Sprintf("https://suchen.mobile.de/fahrzeuge/details.html?id=%d", mdc.ID),
+		Price:             mdc.Price.GrossAmount,
+		Mileage:           mileage,
+		FirstRegistration: firstRegistration,
 	}, nil
 }

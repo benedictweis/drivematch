@@ -14,12 +14,14 @@ func generateRandomCars(n int, manufacturer, model string) []common.Car {
 	cars := make([]common.Car, n)
 	for i := 0; i < n; i++ {
 		cars[i] = common.Car{
-			Manufacturer:      manufacturer,
-			Model:             model,
-			HorsePower:        rand.Float64()*(600-100) + 100,           // Random horsepower between 100 and 600
 			Price:             rand.Float64()*(100000-5000) + 5000,      // Random price between 5,000 and 100,000
 			Mileage:           rand.Float64() * 200000,                  // Random mileage between 0 and 200,000
 			FirstRegistration: time.Now().AddDate(-rand.Intn(20), 0, 0), // Random age between 0 and 20 years
+			Vehicle: &common.VehicleInfo{
+				Manufacturer: manufacturer,
+				Model:        model,
+				HorsePower:   rand.Float64()*(600-100) + 100, // Random horsepower between 100 and 600
+			},
 		}
 	}
 	return cars

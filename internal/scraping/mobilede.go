@@ -13,7 +13,7 @@ import (
 
 const appName = "drivematch"
 
-//go:embed mobilede_scraper.tar.zst
+//go:embed scraping.tar.zst
 var pythonBundle []byte
 
 func ExtractMobiledeScraper() error {
@@ -27,7 +27,7 @@ func ExtractMobiledeScraper() error {
 		return err
 	}
 
-	filePath := filepath.Join(directory, "mobilede_scraper")
+	filePath := filepath.Join(directory, "scraping")
 	if _, err := os.Stat(filePath); err == nil {
 		return nil
 	}
@@ -74,10 +74,10 @@ func ExtractMobiledeScraper() error {
 	return nil
 }
 
-func MobileDeBinaryPath() string {
+func ScrapingBinaryPath() string {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		panic(err)
 	}
-	return filepath.Join(cacheDir, appName, "mobilede_scraper", "mobilede")
+	return filepath.Join(cacheDir, appName, "scraping", "main")
 }

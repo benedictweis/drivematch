@@ -42,7 +42,7 @@ func scrape(ctx context.Context, cmd *cli.Command) error {
 	defer db.Close()
 
 	encodedURL := base64.StdEncoding.EncodeToString([]byte(searchURL))
-	mobiledeCmd := exec.Command(scraping.MobileDeBinaryPath(), encodedURL)
+	mobiledeCmd := exec.Command(scraping.ScrapingBinaryPath(), "mobilede", encodedURL)
 
 	output, err := mobiledeCmd.Output()
 	if err != nil {

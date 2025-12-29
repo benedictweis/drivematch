@@ -26,7 +26,7 @@ func ScoreCars(cars []common.Car, weightHorsePower, weightPrice, weightMileage, 
 	minAge, maxAge := math.MaxFloat64, -math.MaxFloat64
 
 	for i, c := range cars {
-		hp := c.HorsePower
+		hp := c.Vehicle.HorsePower
 		price := c.Price
 		mileage := c.Mileage
 		age := ages[i]
@@ -64,7 +64,7 @@ func ScoreCars(cars []common.Car, weightHorsePower, weightPrice, weightMileage, 
 	scores := make([]float64, n)
 
 	for i, c := range cars {
-		horsePower := (c.HorsePower - minHP) / horsePowerDenom
+		horsePower := (c.Vehicle.HorsePower - minHP) / horsePowerDenom
 		price := (c.Price - minPrice) / priceDenom
 		mileage := (c.Mileage - minMileage) / mileageDenom
 		age := (ages[i] - minAge) / ageDenom
@@ -81,13 +81,13 @@ func GroupCars(cars []common.Car, scores []float64) []common.CarGroup {
 	groups := make(map[groupKey]*common.CarGroup)
 
 	for i, c := range cars {
-		key := groupKey{c.Manufacturer, c.Model}
+		key := groupKey{c.Vehicle.Manufacturer, c.Vehicle.Model}
 
 		g, exists := groups[key]
 		if !exists {
 			g = &common.CarGroup{
-				Manufacturer: c.Manufacturer,
-				Model:        c.Model,
+				Manufacturer: c.Vehicle.Manufacturer,
+				Model:        c.Vehicle.Model,
 			}
 			groups[key] = g
 		}
@@ -96,14 +96,14 @@ func GroupCars(cars []common.Car, scores []float64) []common.CarGroup {
 
 		g.Amount++
 		g.AverageScore += scores[i]
-		g.AverageHorsePower += c.HorsePower
+		g.AverageHorsePower += c.Vehicle.HorsePower
 		g.AveragePrice += c.Price
 		g.AverageMileage += c.Mileage
 		g.AverageAge += age
 
 		if g.FuelType == "" {
-			g.FuelType = c.FuelType
-		} else if g.FuelType != c.FuelType {
+			g.FuelType = c.Vehicle.FuelType
+		} else if g.FuelType != c.Vehicle.FuelType {
 			g.FuelType = "Mixed"
 		}
 	}

@@ -88,6 +88,30 @@ func score(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("error parsing car data: %w", err)
 	}
 
+	vehicleInfosData, err := db.GetAllVehicleInfos()
+	if err != nil {
+		return fmt.Errorf("error getting vehicle infos from database: %w", err)
+	}
+
+	vehicleInfos := make(map[string]*common.VehicleInfo, 0)
+	for _, v := range vehicleInfosData {
+		vehicleInfo, err := data.GetVehicleInfoFromADACData(v.Data)
+		if err != nil {
+			return fmt.Errorf("error parsing vehicle info data: %w", err)
+		}
+
+		vehicleInfos[vehicleInfo.KeyIdentifier] = vehicleInfo
+	}
+
+	cars, failedToMap, err := data.AttachVehicleInfosToCars(cars, vehicleInfos)
+	if err != nil {
+		return fmt.Errorf("error attaching vehicle infos to cars: %w", err)
+	}
+
+	if failedToMap > 0 {
+		fmt.Printf("Warning: %d cars could not be mapped to vehicle information and were excluded from scoring\n", failedToMap)
+	}
+
 	scores := analysis.ScoreCars(cars, weightHorsepower, weightPrice, weightMileage, weightAge)
 
 	type CarScore struct {
@@ -121,13 +145,13 @@ func score(ctx context.Context, cmd *cli.Command) error {
 
 		baseIdx := (i + 1) * columns
 		table[baseIdx+0] = output.Link(cs.Car.ListingURL, cs.Car.ID)
-		table[baseIdx+1] = cs.Car.Manufacturer
-		table[baseIdx+2] = cs.Car.Model
+		table[baseIdx+1] = cs.Car.Vehicle.Manufacturer
+		table[baseIdx+2] = cs.Car.Vehicle.Model
 		table[baseIdx+3] = fmt.Sprintf("%02d/%d", month, year)
 		table[baseIdx+4] = fmt.Sprintf("%.0f km", cs.Car.Mileage)
 		table[baseIdx+5] = output.Price(cs.Car.Price)
-		table[baseIdx+6] = fmt.Sprintf("%.0f hp", cs.Car.HorsePower)
-		table[baseIdx+7] = cs.Car.FuelType
+		table[baseIdx+6] = fmt.Sprintf("%.0f hp", cs.Car.Vehicle.HorsePower)
+		table[baseIdx+7] = cs.Car.Vehicle.FuelType
 	}
 
 	outputWriter.WriteTable(columns, table)

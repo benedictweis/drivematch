@@ -132,17 +132,179 @@ func (db *SQLiteDatabase) GetSearchData(id string) ([]byte, error) {
 	return data, nil
 }
 
+func (db *SQLiteDatabase) GetAllSearchData() ([][]byte, error) {
+	tx, err := db.conn.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query(`SELECT data FROM searches`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query search data: %w", err)
+	}
+	defer rows.Close()
+
+	var result [][]byte
+	for rows.Next() {
+		var compressedData []byte
+		if err := rows.Scan(&compressedData); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		data, err := zstd.Decompress(nil, compressedData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decompress data: %w", err)
+		}
+
+		result = append(result, data)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return result, nil
+}
+
+func (db *SQLiteDatabase) InsertVehicleInfo(id string, dataType string, data []byte) error {
+	tx, err := db.conn.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`INSERT INTO vehicle_info (id, created_at, data_type, data) VALUES (?, datetime('now'), ?, ?)`)
+	if err != nil {
+		return fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	compressedData, err := zstd.Compress(nil, data)
+	if err != nil {
+		return fmt.Errorf("failed to compress data: %w", err)
+	}
+
+	_, err = stmt.Exec(id, dataType, compressedData)
+	if err != nil {
+		return fmt.Errorf("failed to execute statement: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (db *SQLiteDatabase) GetAllVehicleInfoIds() ([]string, error) {
+	tx, err := db.conn.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query(`SELECT id FROM vehicle_info`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query vehicle info ids: %w", err)
+	}
+	defer rows.Close()
+
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		ids = append(ids, id)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return ids, nil
+}
+
+func (db *SQLiteDatabase) GetAllVehicleInfos() ([]common.VehicleInfoEntry, error) {
+	tx, err := db.conn.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	rows, err := tx.Query(`SELECT id, created_at, data_type, data FROM vehicle_info`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query vehicle infos: %w", err)
+	}
+	defer rows.Close()
+
+	var vehicleInfos []common.VehicleInfoEntry
+	for rows.Next() {
+		var v common.VehicleInfoEntry
+		var compressedData []byte
+		if err := rows.Scan(&v.ID, &v.CreatedAt, &v.DataType, &compressedData); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		data, err := zstd.Decompress(nil, compressedData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decompress data: %w", err)
+		}
+		v.Data = data
+		vehicleInfos = append(vehicleInfos, v)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return vehicleInfos, nil
+}
+
+func (db *SQLiteDatabase) GetVehicleInfo(id string) ([]byte, error) {
+	tx, err := db.conn.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	var compressedData []byte
+	err = tx.QueryRow(`SELECT data FROM vehicle_info WHERE id = ?`, id).Scan(&compressedData)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("no vehicle info found with id %s", id)
+		}
+		return nil, fmt.Errorf("failed to query vehicle info data: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	data, err := zstd.Decompress(nil, compressedData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decompress data: %w", err)
+	}
+
+	return data, nil
+}
+
 func (db *SQLiteDatabase) performMigrations() error {
 	createTablesSQL := `
 	CREATE TABLE IF NOT EXISTS searches (
 		id TEXT PRIMARY KEY,
 		name TEXT NOT NULL,
 		created_at DATETIME NOT NULL,
-		searchType TEXT NOT NULL,
+		search_type TEXT NOT NULL,
+		data BLOB NOT NULL
+	);
+	CREATE TABLE IF NOT EXISTS vehicle_info (
+		id TEXT PRIMARY KEY,
+		created_at DATETIME NOT NULL,
+		data_type TEXT NOT NULL,
 		data BLOB NOT NULL
 	);
 	`
-
 	_, err := db.conn.Exec(createTablesSQL)
 	if err != nil {
 		return fmt.Errorf("failed to create tables: %w", err)
