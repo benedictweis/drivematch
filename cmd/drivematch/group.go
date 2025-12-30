@@ -6,10 +6,13 @@ import (
 	"sort"
 
 	"github.com/benedictweis/drivematch/internal/analysis"
-	"github.com/benedictweis/drivematch/internal/data"
-	"github.com/benedictweis/drivematch/internal/database"
 	"github.com/benedictweis/drivematch/internal/output"
+	"github.com/benedictweis/drivematch/internal/scraping"
 	"github.com/urfave/cli/v3"
+)
+
+var (
+	sortBy string
 )
 
 var groupCmd *cli.Command = &cli.Command{
@@ -40,25 +43,12 @@ func group(ctx context.Context, cmd *cli.Command) error {
 		return cli.ShowSubcommandHelp(cmd)
 	}
 
-	outputWriter, err := output.GetOutputWriter(outputFormat)
-	if err != nil {
-		fmt.Println(err.Error())
-		return cli.ShowSubcommandHelp(cmd)
-	}
-
-	db := database.NewSQLiteDatabase(databasePath)
-
-	if err := db.Connect(); err != nil {
-		return fmt.Errorf("error connecting to database: %w", err)
-	}
-	defer db.Close()
-
 	searchData, err := db.GetSearchData(searchId)
 	if err != nil {
 		return fmt.Errorf("error getting search data from database: %w", err)
 	}
 
-	cars, err := data.GetCarsFromMobileDeData(searchData)
+	cars, err := scraping.GetCarsFromMobileDeData(searchData)
 	if err != nil {
 		return fmt.Errorf("error parsing car data: %w", err)
 	}

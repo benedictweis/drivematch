@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/benedictweis/drivematch/internal/database"
 	"github.com/benedictweis/drivematch/internal/scraping"
 	"github.com/urfave/cli/v3"
+)
+
+var (
+	searchName string
+	searchURL  string
 )
 
 var scrapeCmd *cli.Command = &cli.Command{
@@ -31,13 +35,6 @@ func scrape(ctx context.Context, cmd *cli.Command) error {
 		fmt.Println("both search name and url must be provided")
 		return cli.ShowSubcommandHelp(cmd)
 	}
-
-	db := database.NewSQLiteDatabase(databasePath)
-
-	if err := db.Connect(); err != nil {
-		return fmt.Errorf("error connecting to database: %w", err)
-	}
-	defer db.Close()
 
 	searchData, err := scraping.ScrapeMobileDe(searchURL)
 	if err != nil {

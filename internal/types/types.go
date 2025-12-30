@@ -4,12 +4,14 @@ import "time"
 
 type Car struct {
 	ID                string
-	KeyIdentifier     string
-	ListingURL        string
+	Manufacturer      string
+	Model             string
+	HorsePower        float64
 	Price             float64
 	Mileage           float64
 	FirstRegistration time.Time
-	Vehicle           *VehicleInfo
+	FuelType          string
+	ListingURL        string
 }
 
 type VehicleInfo struct {
@@ -26,13 +28,6 @@ type VehicleInfo struct {
 	TopSpeed           int
 	NoiseLevel         float64
 	FuelConsumption    string
-}
-
-type VehicleInfoEntry struct {
-	ID        string
-	CreatedAt time.Time
-	DataType  string
-	Data      []byte
 }
 
 type CarGroup struct {
