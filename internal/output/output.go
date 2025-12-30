@@ -1,6 +1,9 @@
 package output
 
-import "fmt"
+import (
+	"fmt"
+	"unicode/utf8"
+)
 
 // OutputWriter is an interface for writing tables.
 type OutputWriter interface {
@@ -106,9 +109,9 @@ func calculateMaxColumnWidths(columns int, rows []string) []int {
 func calculateVisibleLength(s string) int {
 	_, text, isLink := decodeLink(s)
 	if isLink {
-		return len(text)
+		return utf8.RuneCountInString(text)
 	}
-	return len(s)
+	return utf8.RuneCountInString(s)
 }
 
 func formatStringForConsole(s string) string {

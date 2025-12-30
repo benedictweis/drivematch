@@ -1,7 +1,10 @@
 package analysis
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/benedictweis/drivematch/internal/types"
@@ -120,4 +123,47 @@ func GroupCars(cars []types.Car, scores []float64) []types.CarGroup {
 	}
 
 	return result
+}
+
+func GetUniqueCars(cars []types.Car) []types.UniqueCarGroup {
+	uniqueCars := make(map[string]*types.UniqueCarGroup)
+	for _, c := range cars {
+		hash := HashCar(c)
+		uc, exists := uniqueCars[hash]
+		if !exists {
+			uc = &types.UniqueCarGroup{
+				Hash:         hash,
+				Manufacturer: c.Manufacturer,
+				Model:        c.Model,
+				HorsePower:   c.HorsePower,
+				FuelType:     c.FuelType,
+			}
+			uniqueCars[hash] = uc
+		}
+		uc.Amount++
+		year := c.FirstRegistration.Year()
+		if uc.YearFrom == 0 || year < uc.YearFrom {
+			uc.YearFrom = year
+		}
+		if year > uc.YearTo {
+			uc.YearTo = year
+		}
+	}
+
+	result := make([]types.UniqueCarGroup, 0, len(uniqueCars))
+	for _, uc := range uniqueCars {
+		result = append(result, *uc)
+	}
+
+	return result
+}
+
+func HashCar(c types.Car) string {
+	data := fmt.Sprintf("%s|%s|%.2f|%s",
+		strings.ToLower(c.Manufacturer),
+		strings.ToLower(c.Model),
+		c.HorsePower,
+		strings.ToLower(c.FuelType))
+	hash := sha256.Sum256([]byte(data))
+	return fmt.Sprintf("%x", hash)
 }

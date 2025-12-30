@@ -42,6 +42,17 @@ type CarGroup struct {
 	FuelType          string
 }
 
+type UniqueCarGroup struct {
+	Hash         string
+	Amount       int
+	Manufacturer string
+	Model        string
+	YearFrom     int
+	YearTo       int
+	HorsePower   float64
+	FuelType     string
+}
+
 type Search struct {
 	ID         string
 	Name       string
