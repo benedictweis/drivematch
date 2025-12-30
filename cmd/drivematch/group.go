@@ -39,8 +39,7 @@ var groupCmd *cli.Command = &cli.Command{
 
 func group(ctx context.Context, cmd *cli.Command) error {
 	if searchId == "" {
-		fmt.Println("searchId must be provided")
-		return cli.ShowSubcommandHelp(cmd)
+		return fmt.Errorf("searchId must be provided")
 	}
 
 	searchData, err := db.GetSearchData(searchId)

@@ -94,7 +94,7 @@ func listCars(ctx context.Context, cmd *cli.Command) error {
 
 	for i, g := range uniqueCars {
 		baseIdx := (i + 1) * columns
-		table[baseIdx+0] = g.Hash[:5]
+		table[baseIdx+0] = g.Hash
 		table[baseIdx+1] = fmt.Sprintf("%d", g.Amount)
 		table[baseIdx+2] = g.Manufacturer
 		table[baseIdx+3] = g.Model

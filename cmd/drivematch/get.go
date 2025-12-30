@@ -35,12 +35,10 @@ var getCmd *cli.Command = &cli.Command{
 
 func get(ctx context.Context, cmd *cli.Command) error {
 	if dataType != "listing" && dataType != "cars" {
-		fmt.Println("Invalid type. Must be 'listings', 'cars', or 'vehicle_info'.")
-		return cli.ShowSubcommandHelp(cmd)
+		return fmt.Errorf("invalid type, Must be 'listings' or 'cars'")
 	}
 	if objectId == "" {
-		fmt.Println("Id must be provided")
-		return cli.ShowSubcommandHelp(cmd)
+		return fmt.Errorf("Id must be provided")
 	}
 
 	var output string

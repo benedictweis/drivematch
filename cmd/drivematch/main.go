@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/benedictweis/drivematch/internal/database"
@@ -51,7 +50,8 @@ var cmd *cli.Command = &cli.Command{
 
 func main() {
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
 	}
 }
 
@@ -70,7 +70,9 @@ func handleBefore(ctx context.Context, cmd *cli.Command) (context.Context, error
 }
 
 func handleAfter(ctx context.Context, cmd *cli.Command) error {
-	db.Close()
+	if db != nil {
+		db.Close()
+	}
 	return nil
 }
 

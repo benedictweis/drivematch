@@ -11,19 +11,22 @@ import (
 	"github.com/benedictweis/drivematch/internal/types"
 )
 
-func ScrapeADAC(keywords []string) ([]byte, error) {
+type ADACScrapeTarget struct {
+	CarHash string `json:"car_hash"`
+	URL     string `json:"url"`
+}
+
+func ScrapeADAC(targets []ADACScrapeTarget) ([]byte, error) {
 	err := extractPythonBundle()
 	if err != nil {
 		return nil, fmt.Errorf("error extracting python bundle: %w", err)
 	}
 
-	encodedKeywords, err := json.Marshal(keywords)
+	encodedTargets, err := json.Marshal(targets)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling keywords to JSON: %w", err)
+		return nil, fmt.Errorf("error marshaling targets to JSON: %w", err)
 	}
-	encodedKeyIdentifiers := base64.StdEncoding.EncodeToString(encodedKeywords)
-
-	fmt.Println("Attention: You will need to solve a google captcha once the Firefox browser opens!")
+	encodedKeyIdentifiers := base64.StdEncoding.EncodeToString(encodedTargets)
 	adacCmd := exec.Command(scrapingBinaryPath(), "adac", encodedKeyIdentifiers)
 
 	output, err := adacCmd.Output()

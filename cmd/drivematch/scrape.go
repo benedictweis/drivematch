@@ -11,29 +11,49 @@ import (
 var (
 	searchName string
 	searchURL  string
+
+	adacScrapeFile string
 )
 
 var scrapeCmd *cli.Command = &cli.Command{
 	Name:      "scrape",
 	Usage:     "Scrape car data from a mobile.de url",
-	UsageText: "drivematch scrape [options] <name> <url>",
-	Arguments: []cli.Argument{
-		&cli.StringArg{
-			Name:        "name",
-			Destination: &searchName,
+	UsageText: "drivematch scrape",
+	Commands: []*cli.Command{
+		{
+			Name:      "mobilede",
+			Usage:     "Scrape use car listings from mobile.de",
+			UsageText: "drivematch scrape mobilede [options] <name> <url>",
+			Arguments: []cli.Argument{
+				&cli.StringArg{
+					Name:        "name",
+					Destination: &searchName,
+				},
+				&cli.StringArg{
+					Name:        "url",
+					Destination: &searchURL,
+				},
+			},
+			Action: scrapeMobileDe,
 		},
-		&cli.StringArg{
-			Name:        "url",
-			Destination: &searchURL,
+		{
+			Name:      "adac",
+			Usage:     "Scrape supplementary car data from adac.de",
+			UsageText: "drivematch scrape adac [options] <file>",
+			Arguments: []cli.Argument{
+				&cli.StringArg{
+					Name:        "file",
+					Destination: &adacScrapeFile,
+				},
+			},
+			Action: scrapeADAC,
 		},
 	},
-	Action: scrape,
 }
 
-func scrape(ctx context.Context, cmd *cli.Command) error {
+func scrapeMobileDe(ctx context.Context, cmd *cli.Command) error {
 	if searchURL == "" || searchName == "" {
-		fmt.Println("both search name and url must be provided")
-		return cli.ShowSubcommandHelp(cmd)
+		return fmt.Errorf("both search name and url must be provided")
 	}
 
 	searchData, err := scraping.ScrapeMobileDe(searchURL)
@@ -47,6 +67,14 @@ func scrape(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	fmt.Printf("Scrape completed (id: %s)\n", searchId)
+
+	return nil
+}
+
+func scrapeADAC(ctx context.Context, cmd *cli.Command) error {
+	if adacScrapeFile == "" {
+		return fmt.Errorf("scrape file must be provided")
+	}
 
 	return nil
 }
