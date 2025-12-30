@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
-	"os/exec"
 
 	"github.com/benedictweis/drivematch/internal/database"
 	"github.com/benedictweis/drivematch/internal/scraping"
@@ -41,15 +39,12 @@ func scrape(ctx context.Context, cmd *cli.Command) error {
 	}
 	defer db.Close()
 
-	encodedURL := base64.StdEncoding.EncodeToString([]byte(searchURL))
-	mobiledeCmd := exec.Command(scraping.ScrapingBinaryPath(), "mobilede", encodedURL)
-
-	output, err := mobiledeCmd.Output()
+	searchData, err := scraping.ScrapeMobileDe(searchURL)
 	if err != nil {
-		return fmt.Errorf("error capturing output from 'mobilede': %w", err)
+		return fmt.Errorf("error scraping mobile.de: %w", err)
 	}
 
-	searchId, err := db.InsertSearch(searchName, "mobilede", output)
+	searchId, err := db.InsertSearch(searchName, "mobilede", searchData)
 	if err != nil {
 		return fmt.Errorf("error inserting search into database: %w", err)
 	}

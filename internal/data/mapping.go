@@ -1,9 +1,11 @@
 package data
 
-import "github.com/benedictweis/drivematch/internal/common"
+import (
+	"github.com/benedictweis/drivematch/internal/types"
+)
 
-func AttachVehicleInfosToCars(cars []common.Car, vehicleInfos map[string]*common.VehicleInfo) ([]common.Car, int, error) {
-	newCars := make([]common.Car, 0, len(cars))
+func AttachVehicleInfosToCars(cars []types.Car, vehicleInfos map[string]*types.VehicleInfo) ([]types.Car, int, error) {
+	newCars := make([]types.Car, 0, len(cars))
 	failedToMap := 0
 
 	for _, car := range cars {

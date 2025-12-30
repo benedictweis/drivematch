@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/benedictweis/drivematch/internal/common"
+	"github.com/benedictweis/drivematch/internal/types"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 	KeyIdentifierMissing = "unknown"
 )
 
-type MobileDeCar struct {
+type mobileDeListingInfo struct {
 	ID    int `json:"id"`
 	Price struct {
 		GrossAmount float64 `json:"grossAmount"`
@@ -30,14 +30,14 @@ type MobileDeCar struct {
 	} `json:"kba"`
 }
 
-func GetCarsFromMobileDeData(data []byte) ([]common.Car, error) {
-	mobileDeCars := make([]MobileDeCar, 0)
+func GetCarsFromMobileDeData(data []byte) ([]types.Car, error) {
+	mobileDeCars := make([]mobileDeListingInfo, 0)
 	err := json.Unmarshal(data, &mobileDeCars)
 	if err != nil {
 		return nil, err
 	}
 
-	cars := make([]common.Car, 0, len(mobileDeCars))
+	cars := make([]types.Car, 0, len(mobileDeCars))
 	for _, mdc := range mobileDeCars {
 		car, err := convertMobileDeCarToCommonCar(mdc)
 		if err != nil {
@@ -48,7 +48,7 @@ func GetCarsFromMobileDeData(data []byte) ([]common.Car, error) {
 	return cars, nil
 }
 
-func convertMobileDeCarToCommonCar(mdc MobileDeCar) (common.Car, error) {
+func convertMobileDeCarToCommonCar(mdc mobileDeListingInfo) (types.Car, error) {
 	var firstRegistration time.Time
 	if strings.ToLower(mdc.Attr.FirstRegistration) == "neu" || mdc.Attr.FirstRegistration == "" {
 		firstRegistration = time.Now()
@@ -56,7 +56,7 @@ func convertMobileDeCarToCommonCar(mdc MobileDeCar) (common.Car, error) {
 		var err error
 		firstRegistration, err = time.Parse("01/2006", mdc.Attr.FirstRegistration)
 		if err != nil {
-			return common.Car{}, err
+			return types.Car{}, err
 		}
 	}
 
@@ -68,7 +68,7 @@ func convertMobileDeCarToCommonCar(mdc MobileDeCar) (common.Car, error) {
 	}, mdc.Attr.Mileage)
 	mileage, err := strconv.ParseFloat(mileageStr, 64)
 	if err != nil {
-		return common.Car{}, err
+		return types.Car{}, err
 	}
 
 	var keyIdentifier string
@@ -78,7 +78,7 @@ func convertMobileDeCarToCommonCar(mdc MobileDeCar) (common.Car, error) {
 		keyIdentifier = KeyIdentifierMissing
 	}
 
-	return common.Car{
+	return types.Car{
 		ID:                strconv.Itoa(mdc.ID),
 		KeyIdentifier:     keyIdentifier,
 		ListingURL:        fmt.Sprintf("https://suchen.mobile.de/fahrzeuge/details.html?id=%d", mdc.ID),

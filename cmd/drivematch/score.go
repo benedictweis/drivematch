@@ -6,10 +6,10 @@ import (
 	"sort"
 
 	"github.com/benedictweis/drivematch/internal/analysis"
-	"github.com/benedictweis/drivematch/internal/common"
 	"github.com/benedictweis/drivematch/internal/data"
 	"github.com/benedictweis/drivematch/internal/database"
 	"github.com/benedictweis/drivematch/internal/output"
+	"github.com/benedictweis/drivematch/internal/types"
 	"github.com/urfave/cli/v3"
 )
 
@@ -93,7 +93,7 @@ func score(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("error getting vehicle infos from database: %w", err)
 	}
 
-	vehicleInfos := make(map[string]*common.VehicleInfo, 0)
+	vehicleInfos := make(map[string]*types.VehicleInfo, 0)
 	for _, v := range vehicleInfosData {
 		vehicleInfo, err := data.GetVehicleInfoFromADACData(v.Data)
 		if err != nil {
@@ -115,7 +115,7 @@ func score(ctx context.Context, cmd *cli.Command) error {
 	scores := analysis.ScoreCars(cars, weightHorsepower, weightPrice, weightMileage, weightAge)
 
 	type CarScore struct {
-		Car   *common.Car
+		Car   *types.Car
 		Score float64
 	}
 

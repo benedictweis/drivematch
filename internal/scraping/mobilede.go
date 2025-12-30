@@ -1,83 +1,24 @@
 package scraping
 
 import (
-	"archive/tar"
-	"bytes"
-	_ "embed"
-	"io"
-	"os"
-	"path/filepath"
-
-	"github.com/DataDog/zstd"
+	"encoding/base64"
+	"fmt"
+	"os/exec"
 )
 
-const appName = "drivematch"
-
-//go:embed scraping.tar.zst
-var pythonBundle []byte
-
-func ExtractMobiledeScraper() error {
-	cacheDir, err := os.UserCacheDir()
+func ScrapeMobileDe(url string) ([]byte, error) {
+	err := extractPythonBundle()
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("error extracting python bundle: %w", err)
 	}
 
-	directory := filepath.Join(cacheDir, appName)
-	if err := os.MkdirAll(directory, 0755); err != nil {
-		return err
-	}
+	encodedURL := base64.StdEncoding.EncodeToString([]byte(url))
+	mobiledeCmd := exec.Command(scrapingBinaryPath(), "mobilede", encodedURL)
 
-	filePath := filepath.Join(directory, "scraping")
-	if _, err := os.Stat(filePath); err == nil {
-		return nil
-	}
-
-	decompressed, err := zstd.Decompress(nil, pythonBundle)
+	output, err := mobiledeCmd.Output()
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("error capturing output from 'mobilede': %w", err)
 	}
 
-	tarReader := tar.NewReader(bytes.NewReader(decompressed))
-
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		targetPath := filepath.Join(filePath, header.Name)
-
-		switch header.Typeflag {
-		case tar.TypeDir:
-			if err := os.MkdirAll(targetPath, os.FileMode(header.Mode)); err != nil {
-				return err
-			}
-		case tar.TypeReg:
-			if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
-				return err
-			}
-			file, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY, os.FileMode(header.Mode))
-			if err != nil {
-				return err
-			}
-			_, err = io.Copy(file, tarReader)
-			file.Close()
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func ScrapingBinaryPath() string {
-	cacheDir, err := os.UserCacheDir()
-	if err != nil {
-		panic(err)
-	}
-	return filepath.Join(cacheDir, appName, "scraping", "main")
+	return output, nil
 }

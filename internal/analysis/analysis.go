@@ -4,10 +4,10 @@ import (
 	"math"
 	"time"
 
-	"github.com/benedictweis/drivematch/internal/common"
+	"github.com/benedictweis/drivematch/internal/types"
 )
 
-func ScoreCars(cars []common.Car, weightHorsePower, weightPrice, weightMileage, weightAge float64) []float64 {
+func ScoreCars(cars []types.Car, weightHorsePower, weightPrice, weightMileage, weightAge float64) []float64 {
 	n := len(cars)
 	if n == 0 {
 		return nil
@@ -74,18 +74,18 @@ func ScoreCars(cars []common.Car, weightHorsePower, weightPrice, weightMileage, 
 	return scores
 }
 
-func GroupCars(cars []common.Car, scores []float64) []common.CarGroup {
+func GroupCars(cars []types.Car, scores []float64) []types.CarGroup {
 	type groupKey struct{ manufacturer, model string }
 
 	now := time.Now()
-	groups := make(map[groupKey]*common.CarGroup)
+	groups := make(map[groupKey]*types.CarGroup)
 
 	for i, c := range cars {
 		key := groupKey{c.Vehicle.Manufacturer, c.Vehicle.Model}
 
 		g, exists := groups[key]
 		if !exists {
-			g = &common.CarGroup{
+			g = &types.CarGroup{
 				Manufacturer: c.Vehicle.Manufacturer,
 				Model:        c.Vehicle.Model,
 			}
@@ -108,7 +108,7 @@ func GroupCars(cars []common.Car, scores []float64) []common.CarGroup {
 		}
 	}
 
-	result := make([]common.CarGroup, 0, len(groups))
+	result := make([]types.CarGroup, 0, len(groups))
 	for _, g := range groups {
 		n := float64(g.Amount)
 		g.AverageScore /= n

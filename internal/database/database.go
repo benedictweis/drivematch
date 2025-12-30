@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/DataDog/zstd"
-	"github.com/benedictweis/drivematch/internal/common"
+	"github.com/benedictweis/drivematch/internal/types"
 	"github.com/google/uuid"
 	_ "modernc.org/sqlite"
 )
@@ -75,7 +75,7 @@ func (db *SQLiteDatabase) InsertSearch(name, searchType string, data []byte) (st
 	return id, nil
 }
 
-func (db *SQLiteDatabase) GetSearches() ([]common.Search, error) {
+func (db *SQLiteDatabase) GetSearches() ([]types.Search, error) {
 	tx, err := db.conn.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -88,9 +88,9 @@ func (db *SQLiteDatabase) GetSearches() ([]common.Search, error) {
 	}
 	defer rows.Close()
 
-	var searches []common.Search
+	var searches []types.Search
 	for rows.Next() {
-		var s common.Search
+		var s types.Search
 		if err := rows.Scan(&s.ID, &s.Name, &s.CreatedAt, &s.SearchType, &s.DataLen); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
@@ -226,7 +226,7 @@ func (db *SQLiteDatabase) GetAllVehicleInfoIds() ([]string, error) {
 	return ids, nil
 }
 
-func (db *SQLiteDatabase) GetAllVehicleInfos() ([]common.VehicleInfoEntry, error) {
+func (db *SQLiteDatabase) GetAllVehicleInfos() ([]types.VehicleInfoEntry, error) {
 	tx, err := db.conn.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -239,9 +239,9 @@ func (db *SQLiteDatabase) GetAllVehicleInfos() ([]common.VehicleInfoEntry, error
 	}
 	defer rows.Close()
 
-	var vehicleInfos []common.VehicleInfoEntry
+	var vehicleInfos []types.VehicleInfoEntry
 	for rows.Next() {
-		var v common.VehicleInfoEntry
+		var v types.VehicleInfoEntry
 		var compressedData []byte
 		if err := rows.Scan(&v.ID, &v.CreatedAt, &v.DataType, &compressedData); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)

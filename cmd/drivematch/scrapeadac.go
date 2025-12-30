@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"github.com/benedictweis/drivematch/internal/data"
@@ -65,22 +63,13 @@ func scrapeAdac(ctx context.Context, cmd *cli.Command) error {
 
 	fmt.Printf("%d vehicles left to scrape\n", len(keywords))
 
-	keyIdentifierJSON, err := json.Marshal(keywords)
+	adacData, err := scraping.ScrapeADAC(keywords)
 	if err != nil {
-		return fmt.Errorf("error marshaling key identifiers to JSON: %w", err)
-	}
-	encodedKeyIdentifiers := base64.StdEncoding.EncodeToString(keyIdentifierJSON)
-
-	fmt.Println("Attention: You will need to solve a google captcha once the Firefox browser opens!")
-	adacCmd := exec.Command(scraping.ScrapingBinaryPath(), "adac", encodedKeyIdentifiers)
-
-	output, err := adacCmd.Output()
-	if err != nil {
-		return fmt.Errorf("error capturing output from 'adac': %w", err)
+		return fmt.Errorf("error scraping ADAC data: %w", err)
 	}
 
 	var results []json.RawMessage
-	if err := json.Unmarshal(output, &results); err != nil {
+	if err := json.Unmarshal(adacData, &results); err != nil {
 		return fmt.Errorf("error unmarshaling output from 'adac': %w", err)
 	}
 

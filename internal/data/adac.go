@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/benedictweis/drivematch/internal/common"
 	"github.com/benedictweis/drivematch/internal/database"
+	"github.com/benedictweis/drivematch/internal/types"
 )
 
 const (
@@ -68,7 +68,7 @@ type adacVehicleInfo struct {
 	FuelConsumption   string `json:"Verbrauch kombiniert (WLTP)"`
 }
 
-func GetVehicleInfoFromADACData(data []byte) (*common.VehicleInfo, error) {
+func GetVehicleInfoFromADACData(data []byte) (*types.VehicleInfo, error) {
 	var avi adacVehicleInfo
 	err := json.Unmarshal(data, &avi)
 	if err != nil {
@@ -123,7 +123,7 @@ func GetVehicleInfoFromADACData(data []byte) (*common.VehicleInfo, error) {
 		return nil, fmt.Errorf("error parsing trunkVolume value: %w", err)
 	}
 
-	vi := &common.VehicleInfo{
+	vi := &types.VehicleInfo{
 		KeyIdentifier:      fmt.Sprintf("%s/%s", avi.HSN, avi.TSN),
 		Manufacturer:       avi.Make,
 		Model:              avi.Model,
