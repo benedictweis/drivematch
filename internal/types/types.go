@@ -12,6 +12,7 @@ type Car struct {
 	FirstRegistration time.Time
 	FuelType          string
 	ListingURL        string
+	VehicleInfo       *VehicleInfo
 }
 
 type VehicleInfo struct {
@@ -33,6 +34,7 @@ type VehicleInfo struct {
 	TopSpeed           int
 	NoiseLevel         float64
 	FuelConsumption    string
+	DetailsURL         string
 }
 
 type CarGroup struct {

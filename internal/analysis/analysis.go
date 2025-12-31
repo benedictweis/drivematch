@@ -128,7 +128,7 @@ func GroupCars(cars []types.Car, scores []float64) []types.CarGroup {
 func GetUniqueCars(cars []types.Car) []types.UniqueCarGroup {
 	uniqueCars := make(map[string]*types.UniqueCarGroup)
 	for _, c := range cars {
-		hash := HashCar(c)
+		hash := HashCar(&c)
 		uc, exists := uniqueCars[hash]
 		if !exists {
 			uc = &types.UniqueCarGroup{
@@ -158,7 +158,7 @@ func GetUniqueCars(cars []types.Car) []types.UniqueCarGroup {
 	return result
 }
 
-func HashCar(c types.Car) string {
+func HashCar(c *types.Car) string {
 	data := fmt.Sprintf("%s|%s|%.2f|%s",
 		strings.ToLower(c.Manufacturer),
 		strings.ToLower(c.Model),
@@ -166,4 +166,19 @@ func HashCar(c types.Car) string {
 		strings.ToLower(c.FuelType))
 	hash := sha256.Sum256([]byte(data))
 	return fmt.Sprintf("%x", hash)
+}
+
+func MapCarToVehicleInfo(car *types.Car, vehicleInfos map[string][]*types.VehicleInfo) bool {
+	vi, exists := vehicleInfos[HashCar(car)]
+	if !exists {
+		return false
+	} else {
+		for _, info := range vi {
+			if car.FirstRegistration.Year() <= info.ProductionStart.Year() || car.FirstRegistration.Year() >= info.ProductionEnd.Year() {
+				car.VehicleInfo = info
+				return true
+			}
+		}
+	}
+	return false
 }

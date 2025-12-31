@@ -149,20 +149,8 @@ func listCarsNoADAC(ctx context.Context, cmd *cli.Command) error {
 
 	filteredCars := make([]types.Car, 0)
 	for _, car := range cars {
-		vi, exists := vehicleInfos[analysis.HashCar(car)]
-		if !exists {
+		if !analysis.MapCarToVehicleInfo(&car, vehicleInfos) {
 			filteredCars = append(filteredCars, car)
-		} else {
-			found := false
-			for _, info := range vi {
-				if car.FirstRegistration.Year() <= info.ProductionStart.Year() || car.FirstRegistration.Year() >= info.ProductionEnd.Year() {
-					found = true
-					break
-				}
-			}
-			if !found {
-				filteredCars = append(filteredCars, car)
-			}
 		}
 	}
 

@@ -100,6 +100,7 @@ type adacVehicleInfo struct {
 	TopSpeed          string `json:"Höchstgeschwindigkeit"`
 	NoiseLevel        string `json:"Fahrgeräusch"`
 	FuelConsumption   string `json:"Verbrauch kombiniert (WLTP)"`
+	DetailsURL        string `json:"link"`
 }
 
 func GetVehicleInfoFromADACData(carDetail *types.CarDetail) (*types.VehicleInfo, error) {
@@ -194,6 +195,7 @@ func GetVehicleInfoFromADACData(carDetail *types.CarDetail) (*types.VehicleInfo,
 		TopSpeed:           topSpeed,
 		NoiseLevel:         noiseLevel,
 		FuelConsumption:    avi.FuelConsumption,
+		DetailsURL:         avi.DetailsURL,
 	}
 
 	return vi, nil
