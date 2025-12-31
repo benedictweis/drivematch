@@ -1,5 +1,6 @@
 import util
 import json
+from typing import Any
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -12,44 +13,24 @@ FIREFOX_OPTIONS = Options()
 FIREFOX_OPTIONS.add_argument("--window-size=1920,1080")
 
 
-def get_info_from_search_strings(input_json: str) -> list[dict[str, str]]:
-    search_strings = json.loads(input_json)
+def get_info_from_search_strings(input_json: str) -> list[dict[str, Any]]:
+    entries = json.loads(input_json)
     driver = webdriver.Firefox(options=FIREFOX_OPTIONS)
     driver.delete_all_cookies()
 
     infos = []
-    for search_string in search_strings:
-        try:
-            info = get_info_from_search_string(driver, search_string)
-            infos.append(info)
-        except Exception:
-            pass
+    for entry in entries:
+        car_hash = entry["car_hash"]
+        url = entry["url"]
+        info = get_info_from_search_string(driver, url)
+        infos.append({"car_hash": car_hash, "url": url, "data": info})
 
     driver.quit()
     return infos
 
 
-def get_info_from_search_string(driver, search_string: str) -> dict[str, str]:
-    url = ""
-    if search_string.startswith("https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle"):
-        url = search_string
-    else:
-        driver.get(
-            f"https://www.google.com/search?q=site:https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle {search_string}"
-        )
-        util.wait_for_network_idle(driver)
-
-        first_link = WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable(
-                (
-                    By.CSS_SELECTOR,
-                    "a[href^='https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modell']",
-                )
-            )
-        )
-        url = first_link.get_attribute("href") + "#technische-daten"
-
-    driver.get(url)
+def get_info_from_search_string(driver, url: str) -> dict[str, str]:
+    driver.get(url + "#technische-daten")
 
     util.wait_for_network_idle(driver)
 

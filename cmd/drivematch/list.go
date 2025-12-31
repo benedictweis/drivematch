@@ -27,6 +27,16 @@ var listCmd *cli.Command = &cli.Command{
 			Usage:  "list unique cars identified across all searches",
 			Action: listCars,
 		},
+		{
+			Name:   "cars-no-adac",
+			Usage:  "list unique cars identified across all searches that do not have ADAC details scraped yet",
+			Action: listCarsNoADAC,
+		},
+		{
+			Name:   "car-details",
+			Usage:  "list scraped car details entries from adac",
+			Action: listCarDetails,
+		},
 	},
 }
 
@@ -102,6 +112,118 @@ func listCars(ctx context.Context, cmd *cli.Command) error {
 		table[baseIdx+5] = fmt.Sprintf("%d", g.YearTo)
 		table[baseIdx+6] = fmt.Sprintf("%.0f hp", g.HorsePower)
 		table[baseIdx+7] = g.FuelType
+	}
+
+	outputWriter.WriteTable(columns, table)
+	return nil
+}
+
+func listCarsNoADAC(ctx context.Context, cmd *cli.Command) error {
+	searches, err := db.GetAllSearchData()
+	if err != nil {
+		return fmt.Errorf("error getting searches from database: %w", err)
+	}
+
+	cars := make([]types.Car, 0)
+	for _, searchData := range searches {
+		searchCars, err := scraping.GetCarsFromMobileDeData(searchData)
+		if err != nil {
+			return fmt.Errorf("error parsing car data: %w", err)
+		}
+		cars = append(cars, searchCars...)
+	}
+
+	carDetailsEntries, err := db.GetAllCarDetails()
+	if err != nil {
+		return fmt.Errorf("error getting car details from database: %w", err)
+	}
+
+	vehicleInfos := make(map[string][]*types.VehicleInfo)
+	for _, cd := range carDetailsEntries {
+		vi, err := scraping.GetVehicleInfoFromADACData(&cd)
+		if err != nil {
+			return fmt.Errorf("error parsing ADAC vehicle info: %w", err)
+		}
+		vehicleInfos[vi.CarHash] = append(vehicleInfos[vi.CarHash], vi)
+	}
+
+	filteredCars := make([]types.Car, 0)
+	for _, car := range cars {
+		vi, exists := vehicleInfos[analysis.HashCar(car)]
+		if !exists {
+			filteredCars = append(filteredCars, car)
+		} else {
+			found := false
+			for _, info := range vi {
+				if car.FirstRegistration.Year() <= info.ProductionStart.Year() || car.FirstRegistration.Year() >= info.ProductionEnd.Year() {
+					found = true
+					break
+				}
+			}
+			if !found {
+				filteredCars = append(filteredCars, car)
+			}
+		}
+	}
+
+	uniqueCars := analysis.GetUniqueCars(filteredCars)
+
+	sort.Slice(uniqueCars, func(i, j int) bool {
+		return uniqueCars[i].Amount > uniqueCars[j].Amount
+	})
+
+	columns := 8
+	table := make([]string, (len(uniqueCars)+1)*columns)
+
+	table[0] = "Hash"
+	table[1] = "Count"
+	table[2] = "Manufacturer"
+	table[3] = "Model"
+	table[4] = "Year From"
+	table[5] = "Year To"
+	table[6] = "Horsepower"
+	table[7] = "Fuel Type"
+
+	for i, g := range uniqueCars {
+		baseIdx := (i + 1) * columns
+		table[baseIdx+0] = g.Hash
+		table[baseIdx+1] = fmt.Sprintf("%d", g.Amount)
+		table[baseIdx+2] = g.Manufacturer
+		table[baseIdx+3] = g.Model
+		table[baseIdx+4] = fmt.Sprintf("%d", g.YearFrom)
+		table[baseIdx+5] = fmt.Sprintf("%d", g.YearTo)
+		table[baseIdx+6] = fmt.Sprintf("%.0f hp", g.HorsePower)
+		table[baseIdx+7] = g.FuelType
+	}
+
+	outputWriter.WriteTable(columns, table)
+	return nil
+}
+
+func listCarDetails(ctx context.Context, cmd *cli.Command) error {
+	carDetails, err := db.GetAllCarDetails()
+	if err != nil {
+		return fmt.Errorf("error getting car details from database: %w", err)
+	}
+
+	columns := 6
+	table := make([]string, (len(carDetails)+1)*columns)
+
+	table[0] = "ID"
+	table[1] = "Provider ID"
+	table[2] = "Car Hash"
+	table[3] = "Created At"
+	table[4] = "Data Type"
+	table[5] = "Data Length"
+
+	for i, cd := range carDetails {
+		baseIdx := (i + 1) * columns
+		table[baseIdx+0] = cd.ID
+		table[baseIdx+1] = cd.ProviderID
+		table[baseIdx+2] = cd.CarHash
+		table[baseIdx+3] = cd.CreatedAt.Format("2006-01-02 15:04:05")
+		table[baseIdx+4] = cd.DataType
+		table[baseIdx+5] = output.DataLength(len(cd.Data))
 	}
 
 	outputWriter.WriteTable(columns, table)

@@ -22,7 +22,7 @@ var getCmd *cli.Command = &cli.Command{
 		&cli.StringArg{
 			Name:        "type",
 			Destination: &dataType,
-			UsageText:   "the type of data to get (listing or cars)",
+			UsageText:   "the type of data to get (listing, car, car-details or adac-details)",
 		},
 		&cli.StringArg{
 			Name:        "Id",
@@ -34,8 +34,8 @@ var getCmd *cli.Command = &cli.Command{
 }
 
 func get(ctx context.Context, cmd *cli.Command) error {
-	if dataType != "listing" && dataType != "cars" {
-		return fmt.Errorf("invalid type, Must be 'listings' or 'cars'")
+	if dataType != "listing" && dataType != "cars" && dataType != "car-details" && dataType != "adac-details" {
+		return fmt.Errorf("invalid type, Must be 'listings', 'cars', 'car-details' or 'adac-details'")
 	}
 	if objectId == "" {
 		return fmt.Errorf("Id must be provided")
@@ -60,6 +60,7 @@ func get(ctx context.Context, cmd *cli.Command) error {
 			return fmt.Errorf("error formatting JSON: %w", err)
 		}
 		output = string(prettyJSON)
+
 	case "cars":
 		searchData, err := db.GetSearchData(objectId)
 		if err != nil {
@@ -76,8 +77,42 @@ func get(ctx context.Context, cmd *cli.Command) error {
 			return fmt.Errorf("error formatting JSON: %w", err)
 		}
 		output = string(prettyJSON)
-	}
-	fmt.Println(output)
 
+	case "car-details":
+		carDetail, err := db.GetCarDetail(objectId)
+		if err != nil {
+			return fmt.Errorf("error getting car detail from database: %w", err)
+		}
+
+		var jsonData any
+		if err := json.Unmarshal(carDetail.Data, &jsonData); err != nil {
+			return fmt.Errorf("error parsing car detail data as JSON: %w", err)
+		}
+
+		prettyJSON, err := json.MarshalIndent(jsonData, "", "  ")
+		if err != nil {
+			return fmt.Errorf("error formatting JSON: %w", err)
+		}
+		output = string(prettyJSON)
+
+	case "adac-details":
+		carDetail, err := db.GetCarDetail(objectId)
+		if err != nil {
+			return fmt.Errorf("error getting car detail from database: %w", err)
+		}
+
+		vehicleInfo, err := scraping.GetVehicleInfoFromADACData(carDetail)
+		if err != nil {
+			return fmt.Errorf("error parsing ADAC vehicle info: %w", err)
+		}
+
+		prettyJSON, err := json.MarshalIndent(vehicleInfo, "", "  ")
+		if err != nil {
+			return fmt.Errorf("error formatting JSON: %w", err)
+		}
+		output = string(prettyJSON)
+	}
+
+	fmt.Println(output)
 	return nil
 }

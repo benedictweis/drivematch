@@ -7,34 +7,80 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/benedictweis/drivematch/internal/types"
 )
 
 type ADACScrapeTarget struct {
-	CarHash string `json:"car_hash"`
-	URL     string `json:"url"`
+	CarHash string            `json:"car_hash"`
+	URL     string            `json:"url"`
+	Data    map[string]string `json:"data,omitempty"`
 }
 
-func ScrapeADAC(targets []ADACScrapeTarget) ([]byte, error) {
+func ParseADACScrapeFile(content []byte) ([]ADACScrapeTarget, error) {
+	var targets []ADACScrapeTarget
+
+	lines := strings.Split(string(content), "\n")
+	if len(lines) == 0 {
+		return targets, nil
+	}
+
+	// Skip header
+	for i := 1; i < len(lines); i++ {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			continue
+		}
+
+		parts := strings.Split(line, ";")
+		if len(parts) < 2 {
+			continue
+		}
+
+		carHash := strings.TrimSpace(parts[0])
+
+		// Check all parts from the end for ADAC URLs
+		for j := len(parts) - 1; j >= 1; j-- {
+			url := strings.TrimSpace(parts[j])
+			if strings.HasPrefix(url, "https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle") {
+				targets = append(targets, ADACScrapeTarget{
+					CarHash: carHash,
+					URL:     url,
+				})
+			}
+		}
+	}
+
+	return targets, nil
+}
+
+func ScrapeADAC(targets []ADACScrapeTarget) ([]ADACScrapeTarget, error) {
 	err := extractPythonBundle()
 	if err != nil {
 		return nil, fmt.Errorf("error extracting python bundle: %w", err)
 	}
 
-	encodedTargets, err := json.Marshal(targets)
+	targetsJson, err := json.Marshal(targets)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling targets to JSON: %w", err)
 	}
-	encodedKeyIdentifiers := base64.StdEncoding.EncodeToString(encodedTargets)
-	adacCmd := exec.Command(scrapingBinaryPath(), "adac", encodedKeyIdentifiers)
+	encodedTargets := base64.StdEncoding.EncodeToString(targetsJson)
+
+	adacCmd := exec.Command(scrapingBinaryPath(), "adac", encodedTargets)
 
 	output, err := adacCmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("error capturing output from 'adac': %w", err)
 	}
 
-	return output, nil
+	var result []ADACScrapeTarget
+	err = json.Unmarshal(output, &result)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshaling output from 'adac': %w", err)
+	}
+
+	return result, nil
 }
 
 type adacVehicleInfo struct {
@@ -42,6 +88,8 @@ type adacVehicleInfo struct {
 	TSN               string `json:"TSN Schlüsselnummer"`
 	Make              string `json:"Marke"`
 	Model             string `json:"Modell"`
+	ProductionStart   string `json:"Baureihenstart"`
+	ProductionEnd     string `json:"Baureihenende"`
 	Body              string `json:"Karosserie"`
 	HorsePower        string `json:"Leistung maximal in PS (Systemleistung)"`
 	Torque            string `json:"Drehmoment (Systemleistung)"`
@@ -54,9 +102,9 @@ type adacVehicleInfo struct {
 	FuelConsumption   string `json:"Verbrauch kombiniert (WLTP)"`
 }
 
-func GetVehicleInfoFromADACData(data []byte) (*types.VehicleInfo, error) {
+func GetVehicleInfoFromADACData(carDetail *types.CarDetail) (*types.VehicleInfo, error) {
 	var avi adacVehicleInfo
-	err := json.Unmarshal(data, &avi)
+	err := json.Unmarshal(carDetail.Data, &avi)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling ADAC vehicle info: %w", err)
 	}
@@ -109,10 +157,33 @@ func GetVehicleInfoFromADACData(data []byte) (*types.VehicleInfo, error) {
 		return nil, fmt.Errorf("error parsing trunkVolume value: %w", err)
 	}
 
+	var productionStart, productionEnd time.Time
+
+	if avi.ProductionStart != "" && avi.ProductionStart != "n.b." {
+		if t, err := time.Parse("01/06", avi.ProductionStart); err == nil {
+			productionStart = t
+		} else if t, err := time.Parse("01/2006", avi.ProductionStart); err == nil {
+			productionStart = t
+		}
+	}
+
+	if avi.ProductionEnd != "" && avi.ProductionEnd != "n.b." {
+		if t, err := time.Parse("01/06", avi.ProductionEnd); err == nil {
+			productionEnd = t
+		} else if t, err := time.Parse("01/2006", avi.ProductionEnd); err == nil {
+			productionEnd = t
+		}
+	}
+
 	vi := &types.VehicleInfo{
+		ID:                 carDetail.ID,
+		ProviderID:         carDetail.ProviderID,
+		CarHash:            carDetail.CarHash,
 		KeyIdentifier:      fmt.Sprintf("%s/%s", avi.HSN, avi.TSN),
 		Manufacturer:       avi.Make,
 		Model:              avi.Model,
+		ProductionStart:    productionStart,
+		ProductionEnd:      productionEnd,
 		Body:               avi.Body,
 		HorsePower:         horsePower,
 		Torque:             torque,

@@ -15,9 +15,14 @@ type Car struct {
 }
 
 type VehicleInfo struct {
+	ID                 string
+	ProviderID         string
+	CarHash            string
 	KeyIdentifier      string
 	Manufacturer       string
 	Model              string
+	ProductionStart    time.Time
+	ProductionEnd      time.Time
 	Body               string
 	HorsePower         float64
 	Torque             float64
@@ -59,4 +64,13 @@ type Search struct {
 	CreatedAt  time.Time
 	SearchType string
 	DataLen    int
+}
+
+type CarDetail struct {
+	ID         string
+	ProviderID string
+	CarHash    string
+	CreatedAt  time.Time
+	DataType   string
+	Data       []byte
 }

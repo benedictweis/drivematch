@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/benedictweis/drivematch/internal/scraping"
 	"github.com/urfave/cli/v3"
@@ -67,7 +71,6 @@ func scrapeMobileDe(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	fmt.Printf("Scrape completed (id: %s)\n", searchId)
-
 	return nil
 }
 
@@ -76,5 +79,47 @@ func scrapeADAC(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("scrape file must be provided")
 	}
 
+	if _, err := os.Stat(adacScrapeFile); os.IsNotExist(err) {
+		return fmt.Errorf("scrape file does not exist: %s", adacScrapeFile)
+	}
+
+	content, err := os.ReadFile(adacScrapeFile)
+	if err != nil {
+		return fmt.Errorf("error reading file: %w", err)
+	}
+
+	adacScrapeTargets, err := scraping.ParseADACScrapeFile(content)
+	if err != nil {
+		return fmt.Errorf("error parsing adac scrape file: %w", err)
+	}
+
+	adacScrapeResult, err := scraping.ScrapeADAC(adacScrapeTargets)
+	if err != nil {
+		return fmt.Errorf("error scraping adac.de: %w", err)
+	}
+
+	for _, result := range adacScrapeResult {
+		urlParts := strings.Split(result.URL, "/")
+		provider_id := urlParts[len(urlParts)-2]
+
+		_, err := strconv.Atoi(provider_id)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error on provider id format, skipping non-numeric id: %s\n", provider_id)
+			continue
+		}
+
+		jsonData, err := json.Marshal(result.Data)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error marshaling adac data to json: %w", err)
+			continue
+		}
+
+		_, err = db.InsertCarDetail(provider_id, result.CarHash, "adac", jsonData)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error inserting car detail into database: %w", err)
+		}
+	}
+
+	fmt.Println("Scrape completed")
 	return nil
 }
