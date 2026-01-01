@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import InvalidSessionIdException
 
 
 FIREFOX_OPTIONS = Options()
@@ -20,13 +21,54 @@ def get_info_from_search_strings(input_json: str) -> list[dict[str, Any]]:
 
     infos = []
     for entry in entries:
-        car_hash = entry["car_hash"]
-        url = entry["url"]
-        info = get_info_from_search_string(driver, url)
-        infos.append({"car_hash": car_hash, "url": url, "data": info})
+        try:
+            url = ""
+            search_keyword = ""
+            if "url" in entry and entry["url"]:
+                url = entry["url"]
+            elif "search_keyword" in entry and entry["search_keyword"]:
+                search_keyword = entry["search_keyword"]
+                url = perform_google_search(driver, search_keyword)
+                if not url:
+                    continue
+            else:
+                continue
+
+            info = get_info_from_search_string(driver, url)
+            infos.append({"search_keyword": search_keyword, "url": url, "data": info})
+        except:
+            break
 
     driver.quit()
     return infos
+
+
+def perform_google_search(driver, query: str) -> str | None:
+    driver.get(
+        f"https://www.google.com/search?q={query}",
+    )
+
+    util.wait_for_network_idle(driver)
+
+    try:
+        driver.find_element(By.ID, "captcha-form")
+        wait_time = 20
+    except:
+        wait_time = 1
+
+    try:
+        first_link = WebDriverWait(driver, wait_time).until(
+            EC.element_to_be_clickable(
+                (
+                    By.CSS_SELECTOR,
+                    "a[href^='https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modell']",
+                )
+            )
+        )
+    except:
+        return None
+
+    return first_link.get_attribute("href")
 
 
 def get_info_from_search_string(driver, url: str) -> dict[str, str]:

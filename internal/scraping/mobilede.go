@@ -44,6 +44,10 @@ type MobileDeCar struct {
 		FirstRegistration string `json:"fr"`
 		FuelType          string `json:"ft"`
 	} `json:"attr"`
+	KBA struct {
+		HSN string `json:"hsn"`
+		TSN string `json:"tsn"`
+	} `json:"kba"`
 }
 
 func GetCarsFromMobileDeData(data []byte) ([]types.Car, error) {
@@ -101,6 +105,8 @@ func convertMobileDeCarToCommonCar(mdc MobileDeCar) (types.Car, error) {
 
 	return types.Car{
 		ID:                strconv.Itoa(mdc.ID),
+		HSN:               mdc.KBA.HSN,
+		TSN:               mdc.KBA.TSN,
 		Manufacturer:      mdc.Manufacturer,
 		Model:             mdc.Model,
 		Price:             mdc.Price.GrossAmount,

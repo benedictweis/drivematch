@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 
 	"github.com/benedictweis/drivematch/internal/scraping"
 	"github.com/urfave/cli/v3"
@@ -99,24 +97,20 @@ func scrapeADAC(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	for _, result := range adacScrapeResult {
-		urlParts := strings.Split(result.URL, "/")
-		provider_id := urlParts[len(urlParts)-2]
-
-		_, err := strconv.Atoi(provider_id)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error on provider id format, skipping non-numeric id: %s\n", provider_id)
-			continue
-		}
-
 		jsonData, err := json.Marshal(result.Data)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error marshaling adac data to json: %w", err)
-			continue
+			return fmt.Errorf("error marshaling result data to JSON: %w", err)
 		}
 
-		_, err = db.InsertCarDetail(provider_id, result.CarHash, "adac", jsonData)
+		carDetails, err := scraping.GetCarDetailsFromADACData(jsonData)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error inserting car detail into database: %w", err)
+			return fmt.Errorf("error getting car details from ADAC data: %w", err)
+		}
+
+		_, err = db.InsertCarDetail(carDetails.HSN, carDetails.TSN, "adac", jsonData)
+		if err != nil {
+			fmt.Printf("Error inserting car details into database: %v\n", err)
+			continue
 		}
 	}
 

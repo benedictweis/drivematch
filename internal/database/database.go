@@ -167,7 +167,7 @@ func (db *SQLiteDatabase) GetAllSearchData() ([][]byte, error) {
 	return result, nil
 }
 
-func (db *SQLiteDatabase) InsertCarDetail(provider_id, carHash, dataType string, data []byte) (string, error) {
+func (db *SQLiteDatabase) InsertCarDetail(hsn, tsn, dataType string, data []byte) (string, error) {
 	tx, err := db.conn.Begin()
 	if err != nil {
 		return "", fmt.Errorf("failed to begin transaction: %w", err)
@@ -176,7 +176,7 @@ func (db *SQLiteDatabase) InsertCarDetail(provider_id, carHash, dataType string,
 
 	id := uuid.New().String()
 
-	stmt, err := tx.Prepare(`INSERT INTO car_details (id, provider_id, car_hash, created_at, data_type, data) VALUES (?, ?, ?, datetime('now'), ?, ?)`)
+	stmt, err := tx.Prepare(`INSERT INTO car_details (id, hsn, tsn, created_at, data_type, data) VALUES (?, ?, ?, datetime('now'), ?, ?)`)
 	if err != nil {
 		return "", fmt.Errorf("failed to prepare statement: %w", err)
 	}
@@ -187,7 +187,7 @@ func (db *SQLiteDatabase) InsertCarDetail(provider_id, carHash, dataType string,
 		return "", fmt.Errorf("failed to compress data: %w", err)
 	}
 
-	_, err = stmt.Exec(id, provider_id, carHash, dataType, compressedData)
+	_, err = stmt.Exec(id, hsn, tsn, dataType, compressedData)
 	if err != nil {
 		return "", fmt.Errorf("failed to execute statement: %w", err)
 	}
@@ -206,7 +206,7 @@ func (db *SQLiteDatabase) GetAllCarDetails() ([]types.CarDetail, error) {
 	}
 	defer tx.Rollback()
 
-	rows, err := tx.Query(`SELECT id, provider_id, car_hash, created_at, data_type, data FROM car_details`)
+	rows, err := tx.Query(`SELECT id, hsn, tsn, created_at, data_type, data FROM car_details`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query car details: %w", err)
 	}
@@ -216,7 +216,7 @@ func (db *SQLiteDatabase) GetAllCarDetails() ([]types.CarDetail, error) {
 	for rows.Next() {
 		var cd types.CarDetail
 		var compressedData []byte
-		if err := rows.Scan(&cd.ID, &cd.ProviderID, &cd.CarHash, &cd.CreatedAt, &cd.DataType, &compressedData); err != nil {
+		if err := rows.Scan(&cd.ID, &cd.HSN, &cd.TSN, &cd.CreatedAt, &cd.DataType, &compressedData); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 
@@ -245,8 +245,8 @@ func (db *SQLiteDatabase) GetCarDetail(id string) (*types.CarDetail, error) {
 
 	var compressedData []byte
 	var cd types.CarDetail
-	err = tx.QueryRow(`SELECT id, provider_id, car_hash, created_at, data_type, data FROM car_details WHERE id LIKE ? || '%'`, id).
-		Scan(&cd.ID, &cd.ProviderID, &cd.CarHash, &cd.CreatedAt, &cd.DataType, &compressedData)
+	err = tx.QueryRow(`SELECT id, hsn, tsn, created_at, data_type, data FROM car_details WHERE id LIKE ? || '%'`, id).
+		Scan(&cd.ID, &cd.HSN, &cd.TSN, &cd.CreatedAt, &cd.DataType, &compressedData)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("no car detail found with id %s", id)
@@ -278,13 +278,13 @@ func (db *SQLiteDatabase) performMigrations() error {
 	);
 	CREATE TABLE IF NOT EXISTS car_details (
 		id TEXT PRIMARY KEY,
-		provider_id TEXT NOT NULL UNIQUE,
-		car_hash TEXT NOT NULL,
+		hsn TEXT NOT NULL,
+		tsn TEXT NOT NULL,
 		created_at DATETIME NOT NULL,
 		data_type TEXT NOT NULL,
-		data BLOB NOT NULL
+		data BLOB NOT NULL,
+		UNIQUE(hsn, tsn)
 	);
-	CREATE INDEX IF NOT EXISTS idx_car_details_car_hash ON car_details (car_hash);
 	`
 	_, err := db.conn.Exec(createTablesSQL)
 	if err != nil {

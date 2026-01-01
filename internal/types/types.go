@@ -4,6 +4,8 @@ import "time"
 
 type Car struct {
 	ID                string
+	HSN               string
+	TSN               string
 	Manufacturer      string
 	Model             string
 	HorsePower        float64
@@ -12,14 +14,12 @@ type Car struct {
 	FirstRegistration time.Time
 	FuelType          string
 	ListingURL        string
-	VehicleInfo       *VehicleInfo
+	CarDetails        *CarDetails
 }
 
-type VehicleInfo struct {
-	ID                 string
-	ProviderID         string
-	CarHash            string
-	KeyIdentifier      string
+type CarDetails struct {
+	HSN                string
+	TSN                string
 	Manufacturer       string
 	Model              string
 	ProductionStart    time.Time
@@ -50,14 +50,8 @@ type CarGroup struct {
 }
 
 type UniqueCarGroup struct {
-	Hash         string
-	Amount       int
-	Manufacturer string
-	Model        string
-	YearFrom     int
-	YearTo       int
-	HorsePower   float64
-	FuelType     string
+	HSN string
+	TSN string
 }
 
 type Search struct {
@@ -69,10 +63,10 @@ type Search struct {
 }
 
 type CarDetail struct {
-	ID         string
-	ProviderID string
-	CarHash    string
-	CreatedAt  time.Time
-	DataType   string
-	Data       []byte
+	ID        string
+	HSN       string
+	TSN       string
+	CreatedAt time.Time
+	DataType  string
+	Data      []byte
 }

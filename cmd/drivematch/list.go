@@ -87,31 +87,22 @@ func listCars(ctx context.Context, cmd *cli.Command) error {
 	uniqueCars := analysis.GetUniqueCars(cars)
 
 	sort.Slice(uniqueCars, func(i, j int) bool {
-		return uniqueCars[i].Amount > uniqueCars[j].Amount
+		if uniqueCars[i].HSN != uniqueCars[j].HSN {
+			return uniqueCars[i].HSN < uniqueCars[j].HSN
+		}
+		return uniqueCars[i].TSN < uniqueCars[j].TSN
 	})
 
-	columns := 8
+	columns := 2
 	table := make([]string, (len(uniqueCars)+1)*columns)
 
-	table[0] = "Hash"
-	table[1] = "Count"
-	table[2] = "Manufacturer"
-	table[3] = "Model"
-	table[4] = "Year From"
-	table[5] = "Year To"
-	table[6] = "Horsepower"
-	table[7] = "Fuel Type"
+	table[0] = "HSN"
+	table[1] = "TSN"
 
 	for i, g := range uniqueCars {
 		baseIdx := (i + 1) * columns
-		table[baseIdx+0] = g.Hash
-		table[baseIdx+1] = fmt.Sprintf("%d", g.Amount)
-		table[baseIdx+2] = g.Manufacturer
-		table[baseIdx+3] = g.Model
-		table[baseIdx+4] = fmt.Sprintf("%d", g.YearFrom)
-		table[baseIdx+5] = fmt.Sprintf("%d", g.YearTo)
-		table[baseIdx+6] = fmt.Sprintf("%.0f hp", g.HorsePower)
-		table[baseIdx+7] = g.FuelType
+		table[baseIdx+0] = g.HSN
+		table[baseIdx+1] = g.TSN
 	}
 
 	outputWriter.WriteTable(columns, table)
@@ -133,55 +124,54 @@ func listCarsNoADAC(ctx context.Context, cmd *cli.Command) error {
 		cars = append(cars, searchCars...)
 	}
 
-	carDetailsEntries, err := db.GetAllCarDetails()
+	uniqueCars := analysis.GetUniqueCars(cars)
+
+	carDetailsData, err := db.GetAllCarDetails()
 	if err != nil {
 		return fmt.Errorf("error getting car details from database: %w", err)
 	}
 
-	vehicleInfos := make(map[string][]*types.VehicleInfo)
-	for _, cd := range carDetailsEntries {
-		vi, err := scraping.GetVehicleInfoFromADACData(&cd)
+	carDetailsMap := make(map[types.UniqueCarGroup]bool)
+	for _, cd := range carDetailsData {
+		carDetails, err := scraping.GetCarDetailsFromADACData(cd.Data)
 		if err != nil {
-			return fmt.Errorf("error parsing ADAC vehicle info: %w", err)
+			return fmt.Errorf("error parsing car detail data: %w", err)
 		}
-		vehicleInfos[vi.CarHash] = append(vehicleInfos[vi.CarHash], vi)
+
+		uc := types.UniqueCarGroup{
+			HSN: carDetails.HSN,
+			TSN: carDetails.TSN,
+		}
+
+		carDetailsMap[uc] = true
 	}
 
-	filteredCars := make([]types.Car, 0)
-	for _, car := range cars {
-		if !analysis.MapCarToVehicleInfo(&car, vehicleInfos) {
-			filteredCars = append(filteredCars, car)
+	uniqueCarsNoADAC := make([]types.UniqueCarGroup, 0)
+
+	for _, uc := range uniqueCars {
+		_, exists := carDetailsMap[uc]
+		if !exists {
+			uniqueCarsNoADAC = append(uniqueCarsNoADAC, uc)
 		}
 	}
 
-	uniqueCars := analysis.GetUniqueCars(filteredCars)
-
-	sort.Slice(uniqueCars, func(i, j int) bool {
-		return uniqueCars[i].Amount > uniqueCars[j].Amount
+	sort.Slice(uniqueCarsNoADAC, func(i, j int) bool {
+		if uniqueCarsNoADAC[i].HSN != uniqueCarsNoADAC[j].HSN {
+			return uniqueCarsNoADAC[i].HSN < uniqueCarsNoADAC[j].HSN
+		}
+		return uniqueCarsNoADAC[i].TSN < uniqueCarsNoADAC[j].TSN
 	})
 
-	columns := 8
-	table := make([]string, (len(uniqueCars)+1)*columns)
+	columns := 2
+	table := make([]string, (len(uniqueCarsNoADAC)+1)*columns)
 
-	table[0] = "Hash"
-	table[1] = "Count"
-	table[2] = "Manufacturer"
-	table[3] = "Model"
-	table[4] = "Year From"
-	table[5] = "Year To"
-	table[6] = "Horsepower"
-	table[7] = "Fuel Type"
+	table[0] = "HSN"
+	table[1] = "TSN"
 
-	for i, g := range uniqueCars {
+	for i, g := range uniqueCarsNoADAC {
 		baseIdx := (i + 1) * columns
-		table[baseIdx+0] = g.Hash
-		table[baseIdx+1] = fmt.Sprintf("%d", g.Amount)
-		table[baseIdx+2] = g.Manufacturer
-		table[baseIdx+3] = g.Model
-		table[baseIdx+4] = fmt.Sprintf("%d", g.YearFrom)
-		table[baseIdx+5] = fmt.Sprintf("%d", g.YearTo)
-		table[baseIdx+6] = fmt.Sprintf("%.0f hp", g.HorsePower)
-		table[baseIdx+7] = g.FuelType
+		table[baseIdx+0] = g.HSN
+		table[baseIdx+1] = g.TSN
 	}
 
 	outputWriter.WriteTable(columns, table)
@@ -198,8 +188,8 @@ func listCarDetails(ctx context.Context, cmd *cli.Command) error {
 	table := make([]string, (len(carDetails)+1)*columns)
 
 	table[0] = "ID"
-	table[1] = "Provider ID"
-	table[2] = "Car Hash"
+	table[1] = "HSN"
+	table[2] = "TSN"
 	table[3] = "Created At"
 	table[4] = "Data Type"
 	table[5] = "Data Length"
@@ -207,8 +197,8 @@ func listCarDetails(ctx context.Context, cmd *cli.Command) error {
 	for i, cd := range carDetails {
 		baseIdx := (i + 1) * columns
 		table[baseIdx+0] = cd.ID
-		table[baseIdx+1] = cd.ProviderID
-		table[baseIdx+2] = cd.CarHash
+		table[baseIdx+1] = cd.HSN
+		table[baseIdx+2] = cd.TSN
 		table[baseIdx+3] = cd.CreatedAt.Format("2006-01-02 15:04:05")
 		table[baseIdx+4] = cd.DataType
 		table[baseIdx+5] = output.DataLength(len(cd.Data))

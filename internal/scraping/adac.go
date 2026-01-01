@@ -12,10 +12,12 @@ import (
 	"github.com/benedictweis/drivematch/internal/types"
 )
 
+const adacDeCarDetailsURLPrefix = "https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle"
+
 type ADACScrapeTarget struct {
-	CarHash string            `json:"car_hash"`
-	URL     string            `json:"url"`
-	Data    map[string]string `json:"data,omitempty"`
+	SearchKeyword string            `json:"search_keyword,omitempty"`
+	URL           string            `json:"url,omitempty"`
+	Data          map[string]string `json:"data,omitempty"`
 }
 
 func ParseADACScrapeFile(content []byte) ([]ADACScrapeTarget, error) {
@@ -26,8 +28,15 @@ func ParseADACScrapeFile(content []byte) ([]ADACScrapeTarget, error) {
 		return targets, nil
 	}
 
+	var startLine int
+	if lines[0] == "HSN;TSN" {
+		startLine = 1
+	} else {
+		startLine = 0
+	}
+
 	// Skip header
-	for i := 1; i < len(lines); i++ {
+	for i := startLine; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
 		if line == "" {
 			continue
@@ -35,21 +44,17 @@ func ParseADACScrapeFile(content []byte) ([]ADACScrapeTarget, error) {
 
 		parts := strings.Split(line, ";")
 		if len(parts) < 2 {
-			continue
+			return nil, fmt.Errorf("invalid line in ADAC scrape file: %s", line)
 		}
 
-		carHash := strings.TrimSpace(parts[0])
+		hsn := strings.TrimSpace(parts[0])
+		tsn := strings.TrimSpace(parts[1])
 
-		// Check all parts from the end for ADAC URLs
-		for j := len(parts) - 1; j >= 1; j-- {
-			url := strings.TrimSpace(parts[j])
-			if strings.HasPrefix(url, "https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle") {
-				targets = append(targets, ADACScrapeTarget{
-					CarHash: carHash,
-					URL:     url,
-				})
-			}
+		target := ADACScrapeTarget{
+			SearchKeyword: fmt.Sprintf("site:%s HSN %s TSN %s", adacDeCarDetailsURLPrefix, hsn, tsn),
 		}
+
+		targets = append(targets, target)
 	}
 
 	return targets, nil
@@ -83,7 +88,7 @@ func ScrapeADAC(targets []ADACScrapeTarget) ([]ADACScrapeTarget, error) {
 	return result, nil
 }
 
-type adacVehicleInfo struct {
+type adacCarDetails struct {
 	HSN               string `json:"HSN Schlüsselnummer"`
 	TSN               string `json:"TSN Schlüsselnummer"`
 	Make              string `json:"Marke"`
@@ -103,9 +108,9 @@ type adacVehicleInfo struct {
 	DetailsURL        string `json:"link"`
 }
 
-func GetVehicleInfoFromADACData(carDetail *types.CarDetail) (*types.VehicleInfo, error) {
-	var avi adacVehicleInfo
-	err := json.Unmarshal(carDetail.Data, &avi)
+func GetCarDetailsFromADACData(data []byte) (*types.CarDetails, error) {
+	var avi adacCarDetails
+	err := json.Unmarshal(data, &avi)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling ADAC vehicle info: %w", err)
 	}
@@ -176,11 +181,9 @@ func GetVehicleInfoFromADACData(carDetail *types.CarDetail) (*types.VehicleInfo,
 		}
 	}
 
-	vi := &types.VehicleInfo{
-		ID:                 carDetail.ID,
-		ProviderID:         carDetail.ProviderID,
-		CarHash:            carDetail.CarHash,
-		KeyIdentifier:      fmt.Sprintf("%s/%s", avi.HSN, avi.TSN),
+	vi := &types.CarDetails{
+		HSN:                avi.HSN,
+		TSN:                avi.TSN,
 		Manufacturer:       avi.Make,
 		Model:              avi.Model,
 		ProductionStart:    productionStart,

@@ -101,12 +101,12 @@ func get(ctx context.Context, cmd *cli.Command) error {
 			return fmt.Errorf("error getting car detail from database: %w", err)
 		}
 
-		vehicleInfo, err := scraping.GetVehicleInfoFromADACData(carDetail)
+		carDetails, err := scraping.GetCarDetailsFromADACData(carDetail.Data)
 		if err != nil {
-			return fmt.Errorf("error parsing ADAC vehicle info: %w", err)
+			return fmt.Errorf("error parsing ADAC car detail data: %w", err)
 		}
 
-		prettyJSON, err := json.MarshalIndent(vehicleInfo, "", "  ")
+		prettyJSON, err := json.MarshalIndent(carDetails, "", "  ")
 		if err != nil {
 			return fmt.Errorf("error formatting JSON: %w", err)
 		}
