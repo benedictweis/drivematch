@@ -12,6 +12,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+var listCarsNoADACSearchId string
+
 var listCmd *cli.Command = &cli.Command{
 	Name:      "list",
 	Usage:     "list searches or vehicle information stored in the database",
@@ -31,6 +33,14 @@ var listCmd *cli.Command = &cli.Command{
 			Name:   "cars-no-adac",
 			Usage:  "list unique cars identified across all searches that do not have ADAC details scraped yet",
 			Action: listCarsNoADAC,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:        "search-id",
+					Aliases:     []string{"sid"},
+					Usage:       "filter cars to only those from the given search ID",
+					Destination: &listCarsNoADACSearchId,
+				},
+			},
 		},
 		{
 			Name:   "car-details",
@@ -110,18 +120,31 @@ func listCars(ctx context.Context, cmd *cli.Command) error {
 }
 
 func listCarsNoADAC(ctx context.Context, cmd *cli.Command) error {
-	searches, err := db.GetAllSearchData()
-	if err != nil {
-		return fmt.Errorf("error getting searches from database: %w", err)
-	}
-
 	cars := make([]types.Car, 0)
-	for _, searchData := range searches {
-		searchCars, err := scraping.GetCarsFromMobileDeData(searchData)
+
+	if listCarsNoADACSearchId != "" {
+		searchData, err := db.GetSearchData(listCarsNoADACSearchId)
+		if err != nil {
+			return fmt.Errorf("error getting search data from database: %w", err)
+		}
+
+		cars, err = scraping.GetCarsFromMobileDeData(searchData)
 		if err != nil {
 			return fmt.Errorf("error parsing car data: %w", err)
 		}
-		cars = append(cars, searchCars...)
+	} else {
+		searches, err := db.GetAllSearchData()
+		if err != nil {
+			return fmt.Errorf("error getting searches from database: %w", err)
+		}
+
+		for _, searchData := range searches {
+			searchCars, err := scraping.GetCarsFromMobileDeData(searchData)
+			if err != nil {
+				return fmt.Errorf("error parsing car data: %w", err)
+			}
+			cars = append(cars, searchCars...)
+		}
 	}
 
 	uniqueCars := analysis.GetUniqueCars(cars)

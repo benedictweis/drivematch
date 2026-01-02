@@ -12,15 +12,15 @@ import (
 	"github.com/benedictweis/drivematch/internal/types"
 )
 
-const adacDeCarDetailsURLPrefix = "https://www.adac.de/rund-ums-fahrzeug/autokatalog/marken-modelle"
-
 type ADACScrapeTarget struct {
-	SearchKeyword string            `json:"search_keyword,omitempty"`
-	URL           string            `json:"url,omitempty"`
-	Data          map[string]string `json:"data,omitempty"`
+	HSN          string            `json:"hsn,omitempty"`
+	TSN          string            `json:"tsn,omitempty"`
+	LookupHSNTSN bool              `json:"lookup_hsn_tsn,omitempty"`
+	URL          string            `json:"url,omitempty"`
+	Data         map[string]string `json:"data,omitempty"`
 }
 
-func ParseADACScrapeFile(content []byte) ([]ADACScrapeTarget, error) {
+func ParseADACScrapeFile(content []byte, lookupHSNTSN bool) ([]ADACScrapeTarget, error) {
 	var targets []ADACScrapeTarget
 
 	lines := strings.Split(string(content), "\n")
@@ -35,10 +35,17 @@ func ParseADACScrapeFile(content []byte) ([]ADACScrapeTarget, error) {
 		startLine = 0
 	}
 
-	// Skip header
 	for i := startLine; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
 		if line == "" {
+			continue
+		}
+
+		if strings.HasPrefix(line, "https://") {
+			target := ADACScrapeTarget{
+				URL: line,
+			}
+			targets = append(targets, target)
 			continue
 		}
 
@@ -51,7 +58,9 @@ func ParseADACScrapeFile(content []byte) ([]ADACScrapeTarget, error) {
 		tsn := strings.TrimSpace(parts[1])
 
 		target := ADACScrapeTarget{
-			SearchKeyword: fmt.Sprintf("site:%s HSN %s TSN %s", adacDeCarDetailsURLPrefix, hsn, tsn),
+			HSN:          hsn,
+			TSN:          tsn,
+			LookupHSNTSN: lookupHSNTSN,
 		}
 
 		targets = append(targets, target)
@@ -71,6 +80,7 @@ func ScrapeADAC(targets []ADACScrapeTarget) ([]ADACScrapeTarget, error) {
 		return nil, fmt.Errorf("error marshaling targets to JSON: %w", err)
 	}
 	encodedTargets := base64.StdEncoding.EncodeToString(targetsJson)
+	fmt.Println(encodedTargets)
 
 	adacCmd := exec.Command(scrapingBinaryPath(), "adac", encodedTargets)
 
@@ -116,7 +126,7 @@ func GetCarDetailsFromADACData(data []byte) (*types.CarDetails, error) {
 	}
 
 	torqueStr := strings.TrimSuffix(avi.Torque, " Nm")
-	if torqueStr == "n.b." {
+	if torqueStr == "n.b." || torqueStr == "" {
 		torqueStr = "0"
 	}
 	torque, err := strconv.ParseFloat(torqueStr, 64)
@@ -126,7 +136,7 @@ func GetCarDetailsFromADACData(data []byte) (*types.CarDetails, error) {
 
 	accelerationTo100Str := strings.TrimSuffix(avi.AccelerationTo100, " s")
 	accelerationTo100Str = strings.ReplaceAll(accelerationTo100Str, ",", ".")
-	if accelerationTo100Str == "n.b." {
+	if accelerationTo100Str == "n.b." || accelerationTo100Str == "" {
 		accelerationTo100Str = "0"
 	}
 	accelerationTo100, err := strconv.ParseFloat(accelerationTo100Str, 64)
@@ -135,7 +145,7 @@ func GetCarDetailsFromADACData(data []byte) (*types.CarDetails, error) {
 	}
 
 	topSpeedStr := strings.TrimSuffix(avi.TopSpeed, " km/h")
-	if topSpeedStr == "n.b." {
+	if topSpeedStr == "n.b." || topSpeedStr == "" {
 		topSpeedStr = "0"
 	}
 	topSpeed, err := strconv.Atoi(topSpeedStr)
@@ -144,12 +154,19 @@ func GetCarDetailsFromADACData(data []byte) (*types.CarDetails, error) {
 	}
 
 	noiseLevelStr := strings.TrimSuffix(avi.NoiseLevel, " dB")
+	if noiseLevelStr == "n.b." || noiseLevelStr == "" {
+		noiseLevelStr = "0"
+	}
 	noiseLevel, err := strconv.ParseFloat(noiseLevelStr, 64)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing noiseLevel value: %w", err)
 	}
 
-	horsePower, err := strconv.ParseFloat(avi.HorsePower, 64)
+	horsePowerStr := avi.HorsePower
+	if horsePowerStr == "n.b." || horsePowerStr == "" {
+		horsePowerStr = "0"
+	}
+	horsePower, err := strconv.ParseFloat(horsePowerStr, 64)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing horsePower value: %w", err)
 	}

@@ -14,7 +14,8 @@ var (
 	searchName string
 	searchURL  string
 
-	adacScrapeFile string
+	adacScrapeFile   string
+	adacLookupHSNTSN bool
 )
 
 var scrapeCmd *cli.Command = &cli.Command{
@@ -46,6 +47,15 @@ var scrapeCmd *cli.Command = &cli.Command{
 				&cli.StringArg{
 					Name:        "file",
 					Destination: &adacScrapeFile,
+				},
+			},
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:        "lookup-hsn-tsn",
+					Aliases:     []string{"l"},
+					Usage:       "Resolves hsn and tsn numbers to a car name which is then used to find the correct car on adac.de",
+					Destination: &adacLookupHSNTSN,
+					Value:       false,
 				},
 			},
 			Action: scrapeADAC,
@@ -86,7 +96,7 @@ func scrapeADAC(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("error reading file: %w", err)
 	}
 
-	adacScrapeTargets, err := scraping.ParseADACScrapeFile(content)
+	adacScrapeTargets, err := scraping.ParseADACScrapeFile(content, adacLookupHSNTSN)
 	if err != nil {
 		return fmt.Errorf("error parsing adac scrape file: %w", err)
 	}
@@ -104,12 +114,18 @@ func scrapeADAC(ctx context.Context, cmd *cli.Command) error {
 
 		carDetails, err := scraping.GetCarDetailsFromADACData(jsonData)
 		if err != nil {
-			return fmt.Errorf("error getting car details from ADAC data: %w", err)
+			fmt.Printf("error getting car details from ADAC data: %w\n", err)
+			continue
+		}
+
+		if carDetails.HSN == "" || carDetails.TSN == "" {
+			fmt.Println("skipping car detail insert due to missing HSN/TSN")
+			continue
 		}
 
 		_, err = db.InsertCarDetail(carDetails.HSN, carDetails.TSN, "adac", jsonData)
 		if err != nil {
-			fmt.Printf("Error inserting car details into database: %v\n", err)
+			fmt.Printf("error inserting car details into database: %v\n", err)
 			continue
 		}
 	}
