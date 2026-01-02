@@ -122,23 +122,25 @@ func score(ctx context.Context, cmd *cli.Command) error {
 		return carScores[i].Score > carScores[j].Score
 	})
 
-	columns := 14
+	columns := 16
 	table := make([]string, (len(carScores)+1)*columns)
 
 	table[0] = "ID"
-	table[1] = "Make"
-	table[2] = "Model"
-	table[3] = "Year"
-	table[4] = "Mileage"
-	table[5] = "Price"
-	table[6] = "Fuel Type"
-	table[7] = "Horsepower"
-	table[8] = "Torque"
-	table[9] = "Trunk Volume"
-	table[10] = "0-100 km/h"
-	table[11] = "Top Speed"
-	table[12] = "Noise Level"
-	table[13] = "Consumption"
+	table[1] = "HSN"
+	table[2] = "TSN"
+	table[3] = "Make"
+	table[4] = "Model"
+	table[5] = "Year"
+	table[6] = "Mileage"
+	table[7] = "Price"
+	table[8] = "Fuel"
+	table[9] = "Horsepower"
+	table[10] = "Torque"
+	table[11] = "Trunk"
+	table[12] = "0-100"
+	table[13] = "Top Speed"
+	table[14] = "Noise Level"
+	table[15] = "Consumption"
 
 	for i, cs := range carScores {
 		month := cs.Car.FirstRegistration.Month()
@@ -146,31 +148,33 @@ func score(ctx context.Context, cmd *cli.Command) error {
 
 		baseIdx := (i + 1) * columns
 		table[baseIdx+0] = output.Link(cs.Car.ListingURL, cs.Car.ID)
-		table[baseIdx+1] = cs.Car.Manufacturer
+		table[baseIdx+1] = cs.Car.HSN
+		table[baseIdx+2] = cs.Car.TSN
+		table[baseIdx+3] = cs.Car.Manufacturer
 		if cs.Car.CarDetails != nil {
-			table[baseIdx+2] = output.Link(cs.Car.CarDetails.DetailsURL, cs.Car.Model)
+			table[baseIdx+4] = output.Link(cs.Car.CarDetails.DetailsURL, cs.Car.Model)
 		} else {
-			table[baseIdx+2] = cs.Car.Model
+			table[baseIdx+4] = cs.Car.Model
 		}
-		table[baseIdx+3] = fmt.Sprintf("%02d/%d", month, year)
-		table[baseIdx+4] = fmt.Sprintf("%.0f km", cs.Car.Mileage)
-		table[baseIdx+5] = output.Price(cs.Car.Price)
-		table[baseIdx+6] = cs.Car.FuelType
-		table[baseIdx+7] = fmt.Sprintf("%.0f hp", cs.Car.HorsePower)
+		table[baseIdx+5] = fmt.Sprintf("%02d/%d", month, year)
+		table[baseIdx+6] = fmt.Sprintf("%.0f km", cs.Car.Mileage)
+		table[baseIdx+7] = output.Price(cs.Car.Price)
+		table[baseIdx+8] = cs.Car.FuelType
+		table[baseIdx+9] = fmt.Sprintf("%.0f hp", cs.Car.HorsePower)
 		if cs.Car.CarDetails != nil {
-			table[baseIdx+8] = fmt.Sprintf("%.0f Nm", cs.Car.CarDetails.Torque)
-			table[baseIdx+9] = fmt.Sprintf("%d l", cs.Car.CarDetails.TrunkVolume)
-			table[baseIdx+10] = fmt.Sprintf("%.2f s", cs.Car.CarDetails.Acceleration0to100)
-			table[baseIdx+11] = fmt.Sprintf("%d km/h", cs.Car.CarDetails.TopSpeed)
-			table[baseIdx+12] = fmt.Sprintf("%.0f dB", cs.Car.CarDetails.NoiseLevel)
-			table[baseIdx+13] = cs.Car.CarDetails.FuelConsumption
+			table[baseIdx+10] = fmt.Sprintf("%.0f Nm", cs.Car.CarDetails.Torque)
+			table[baseIdx+11] = fmt.Sprintf("%d l", cs.Car.CarDetails.TrunkVolume)
+			table[baseIdx+12] = fmt.Sprintf("%.2f s", cs.Car.CarDetails.Acceleration0to100)
+			table[baseIdx+13] = fmt.Sprintf("%d km/h", cs.Car.CarDetails.TopSpeed)
+			table[baseIdx+14] = fmt.Sprintf("%.0f dB", cs.Car.CarDetails.NoiseLevel)
+			table[baseIdx+15] = cs.Car.CarDetails.FuelConsumption
 		} else {
-			table[baseIdx+8] = ""
-			table[baseIdx+9] = ""
 			table[baseIdx+10] = ""
 			table[baseIdx+11] = ""
 			table[baseIdx+12] = ""
 			table[baseIdx+13] = ""
+			table[baseIdx+14] = ""
+			table[baseIdx+15] = ""
 		}
 	}
 
