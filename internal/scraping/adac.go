@@ -80,7 +80,6 @@ func ScrapeADAC(targets []ADACScrapeTarget) ([]ADACScrapeTarget, error) {
 		return nil, fmt.Errorf("error marshaling targets to JSON: %w", err)
 	}
 	encodedTargets := base64.StdEncoding.EncodeToString(targetsJson)
-	fmt.Println(encodedTargets)
 
 	adacCmd := exec.Command(scrapingBinaryPath(), "adac", encodedTargets)
 
