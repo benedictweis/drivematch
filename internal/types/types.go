@@ -38,15 +38,18 @@ type CarDetails struct {
 }
 
 type CarGroup struct {
-	Amount            int
-	Manufacturer      string
-	Model             string
-	AverageScore      float64
-	AverageHorsePower float64
-	AveragePrice      float64
-	AverageMileage    float64
-	AverageAge        float64
-	FuelType          string
+	Amount         int
+	HSN            string
+	TSN            string
+	Manufacturer   string
+	Model          string
+	HorsePower     float64
+	AverageScore   float64
+	AveragePrice   float64
+	AverageMileage float64
+	AverageAge     float64
+	FuelType       string
+	CarDetails     *CarDetails
 }
 
 type UniqueCarGroup struct {

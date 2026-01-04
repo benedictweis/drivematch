@@ -12,7 +12,9 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var listCarsNoADACSearchId string
+var (
+	listCarsSearchId string
+)
 
 var listCmd *cli.Command = &cli.Command{
 	Name:      "list",
@@ -28,6 +30,14 @@ var listCmd *cli.Command = &cli.Command{
 			Name:   "cars",
 			Usage:  "list unique cars identified across all searches",
 			Action: listCars,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:        "search-id",
+					Aliases:     []string{"sid"},
+					Usage:       "filter cars to only those from the given search ID",
+					Destination: &listCarsSearchId,
+				},
+			},
 		},
 		{
 			Name:   "cars-no-adac",
@@ -38,7 +48,7 @@ var listCmd *cli.Command = &cli.Command{
 					Name:        "search-id",
 					Aliases:     []string{"sid"},
 					Usage:       "filter cars to only those from the given search ID",
-					Destination: &listCarsNoADACSearchId,
+					Destination: &listCarsSearchId,
 				},
 			},
 		},
@@ -80,18 +90,31 @@ func listSearches(ctx context.Context, cmd *cli.Command) error {
 }
 
 func listCars(ctx context.Context, cmd *cli.Command) error {
-	searches, err := db.GetAllSearchData()
-	if err != nil {
-		return fmt.Errorf("error getting searches from database: %w", err)
-	}
-
 	cars := make([]types.Car, 0)
-	for _, searchData := range searches {
-		searchCars, err := scraping.GetCarsFromMobileDeData(searchData)
+
+	if listCarsSearchId != "" {
+		searchData, err := db.GetSearchData(listCarsSearchId)
+		if err != nil {
+			return fmt.Errorf("error getting search data from database: %w", err)
+		}
+
+		cars, err = scraping.GetCarsFromMobileDeData(searchData)
 		if err != nil {
 			return fmt.Errorf("error parsing car data: %w", err)
 		}
-		cars = append(cars, searchCars...)
+	} else {
+		searches, err := db.GetAllSearchData()
+		if err != nil {
+			return fmt.Errorf("error getting searches from database: %w", err)
+		}
+
+		for _, searchData := range searches {
+			searchCars, err := scraping.GetCarsFromMobileDeData(searchData)
+			if err != nil {
+				return fmt.Errorf("error parsing car data: %w", err)
+			}
+			cars = append(cars, searchCars...)
+		}
 	}
 
 	uniqueCars := analysis.GetUniqueCars(cars)
@@ -122,8 +145,8 @@ func listCars(ctx context.Context, cmd *cli.Command) error {
 func listCarsNoADAC(ctx context.Context, cmd *cli.Command) error {
 	cars := make([]types.Car, 0)
 
-	if listCarsNoADACSearchId != "" {
-		searchData, err := db.GetSearchData(listCarsNoADACSearchId)
+	if listCarsSearchId != "" {
+		searchData, err := db.GetSearchData(listCarsSearchId)
 		if err != nil {
 			return fmt.Errorf("error getting search data from database: %w", err)
 		}

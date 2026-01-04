@@ -74,21 +74,28 @@ func ScoreCars(cars []types.Car, weightHorsePower, weightPrice, weightMileage, w
 	return scores
 }
 
-func GroupCars(cars []types.Car, scores []float64) []types.CarGroup {
-	type groupKey struct{ manufacturer, model string }
-
+func GroupCars(cars []types.Car, scores []float64, carDetails map[types.UniqueCarGroup]*types.CarDetails) []types.CarGroup {
 	now := time.Now()
-	groups := make(map[groupKey]*types.CarGroup)
+	groups := make(map[types.UniqueCarGroup]*types.CarGroup)
 
 	for i, c := range cars {
-		key := groupKey{c.Manufacturer, c.Model}
+		key := types.UniqueCarGroup{HSN: c.HSN, TSN: c.TSN}
+
+		if key.HSN == "" || key.TSN == "" {
+			continue
+		}
 
 		g, exists := groups[key]
 		if !exists {
 			g = &types.CarGroup{
+				HSN:          c.HSN,
+				TSN:          c.TSN,
 				Manufacturer: c.Manufacturer,
 				Model:        c.Model,
+				HorsePower:   c.HorsePower,
+				FuelType:     c.FuelType,
 			}
+			MapCarGroupToCarDetails(g, carDetails)
 			groups[key] = g
 		}
 
@@ -96,23 +103,15 @@ func GroupCars(cars []types.Car, scores []float64) []types.CarGroup {
 
 		g.Amount++
 		g.AverageScore += scores[i]
-		g.AverageHorsePower += c.HorsePower
 		g.AveragePrice += c.Price
 		g.AverageMileage += c.Mileage
 		g.AverageAge += age
-
-		if g.FuelType == "" {
-			g.FuelType = c.FuelType
-		} else if g.FuelType != c.FuelType {
-			g.FuelType = "Mixed"
-		}
 	}
 
 	result := make([]types.CarGroup, 0, len(groups))
 	for _, g := range groups {
 		n := float64(g.Amount)
 		g.AverageScore /= n
-		g.AverageHorsePower /= n
 		g.AveragePrice /= n
 		g.AverageMileage /= n
 		g.AverageAge /= n
@@ -155,6 +154,21 @@ func MapCarToCarDetails(car *types.Car, carDetails map[types.UniqueCarGroup]*typ
 		return false
 	} else {
 		car.CarDetails = cd
+	}
+	return false
+}
+
+func MapCarGroupToCarDetails(cg *types.CarGroup, carDetails map[types.UniqueCarGroup]*types.CarDetails) bool {
+	uc := types.UniqueCarGroup{
+		HSN: cg.HSN,
+		TSN: cg.TSN,
+	}
+
+	cd, exists := carDetails[uc]
+	if !exists {
+		return false
+	} else {
+		cg.CarDetails = cd
 	}
 	return false
 }
