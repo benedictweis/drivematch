@@ -94,7 +94,7 @@ func group(ctx context.Context, cmd *cli.Command) error {
 		})
 	}
 
-	columns := 16
+	columns := 17
 	table := make([]string, (len(groups)+1)*columns)
 
 	table[0] = "HSN"
@@ -111,8 +111,9 @@ func group(ctx context.Context, cmd *cli.Command) error {
 	table[11] = "Trunk"
 	table[12] = "0-100"
 	table[13] = "Top Speed"
-	table[14] = "Noise Level"
+	table[14] = "Noise"
 	table[15] = "Consumption"
+	table[16] = "Drivetrain"
 
 	for i, group := range groups {
 		baseIdx := (i + 1) * columns
@@ -137,6 +138,7 @@ func group(ctx context.Context, cmd *cli.Command) error {
 			table[baseIdx+13] = fmt.Sprintf("%d km/h", group.CarDetails.TopSpeed)
 			table[baseIdx+14] = fmt.Sprintf("%.0f dB", group.CarDetails.NoiseLevel)
 			table[baseIdx+15] = group.CarDetails.FuelConsumption
+			table[baseIdx+16] = group.CarDetails.Drivetrain
 		} else {
 			table[baseIdx+10] = ""
 			table[baseIdx+11] = ""
@@ -144,6 +146,7 @@ func group(ctx context.Context, cmd *cli.Command) error {
 			table[baseIdx+13] = ""
 			table[baseIdx+14] = ""
 			table[baseIdx+15] = ""
+			table[baseIdx+16] = ""
 		}
 	}
 

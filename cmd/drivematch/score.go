@@ -122,7 +122,7 @@ func score(ctx context.Context, cmd *cli.Command) error {
 		return carScores[i].Score > carScores[j].Score
 	})
 
-	columns := 16
+	columns := 17
 	table := make([]string, (len(carScores)+1)*columns)
 
 	table[0] = "ID"
@@ -139,8 +139,9 @@ func score(ctx context.Context, cmd *cli.Command) error {
 	table[11] = "Trunk"
 	table[12] = "0-100"
 	table[13] = "Top Speed"
-	table[14] = "Noise Level"
+	table[14] = "Noise"
 	table[15] = "Consumption"
+	table[16] = "Drivetrain"
 
 	for i, cs := range carScores {
 		month := cs.Car.FirstRegistration.Month()
@@ -168,6 +169,7 @@ func score(ctx context.Context, cmd *cli.Command) error {
 			table[baseIdx+13] = fmt.Sprintf("%d km/h", cs.Car.CarDetails.TopSpeed)
 			table[baseIdx+14] = fmt.Sprintf("%.0f dB", cs.Car.CarDetails.NoiseLevel)
 			table[baseIdx+15] = cs.Car.CarDetails.FuelConsumption
+			table[baseIdx+16] = cs.Car.CarDetails.Drivetrain
 		} else {
 			table[baseIdx+10] = ""
 			table[baseIdx+11] = ""
@@ -175,6 +177,7 @@ func score(ctx context.Context, cmd *cli.Command) error {
 			table[baseIdx+13] = ""
 			table[baseIdx+14] = ""
 			table[baseIdx+15] = ""
+			table[baseIdx+16] = ""
 		}
 	}
 
